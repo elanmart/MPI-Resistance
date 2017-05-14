@@ -14,7 +14,9 @@
 #define STR
 
 typedef struct _config {
-   size_t max_nodes;
+   uint32_t max_nodes;
+   uint32_t E_neighs;
+   uint32_t max_neighs;
    float nb_proba;
    char *mode;
 } config;

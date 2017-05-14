@@ -8,8 +8,9 @@
 
 typedef struct _Node {
    uint32_t ID;
+   uint32_t level;
 
-   uint32_t* parent;
+   uint32_t  parent;
    uint32_t* neighbours;
    uint32_t* children;
 
@@ -26,6 +27,7 @@ typedef struct _Node {
 
 
 void init(Node *n);
+void add_neighbour(Node* n, uint32_t idx);
 void event_loop(Node* n);
 void pass_acceptor(Node* n);
 void get_resource(Node* n);
