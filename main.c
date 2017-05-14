@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <mpi/mpi.h>
-#include <zconf.h>
 #include "src/node.h"
 #include "src/config.h"
 #include "src/backend.h"
@@ -83,17 +82,22 @@ int main (int argc, char* argv[])
    config* cfg = parse(argc, argv);
    MPI_Datatype dtype = make_node_dtype(cfg);
 
+   Node* n;
+
    if (rank is 0) {
       Node* tree  = _init_tree(size, cfg);
       for range(i, size) {
          MPI_Send_Default(tree + i, dtype, i);
       }
 
-      finalize(tree + 0);
+      n = tree + 0;
    } else {
-      Node* n = malloc(sizeof(Node));
+      n = malloc(sizeof(Node));
       MPI_Recv_Default(n, dtype, 0);
    }
+
+   finalize(n);
+   start(n);
 
    _exit_mpi();
 

@@ -29,7 +29,7 @@ typedef struct _Node {
 void init(Node *n);
 void finalize(Node *n);
 void add_neighbour(Node* n, uint32_t idx);
-void event_loop(Node* n);
+void start(Node* n);
 void pass_acceptor(Node* n);
 void get_resource(Node* n);
 void get_acceptance(Node* n);
