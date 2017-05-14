@@ -1,12 +1,12 @@
 #include "config.h"
 
 
-#define ARG(_name, _type, _default) {                  \
-   char* val  = get(argc, argv, #_name);               \
-   if (val is NULL)                                    \
-      cfg->_name = _default;                           \
-   else                                                \
-      cfg->_name = _type(val);                         \
+#define ARG(_name, _type, _default) {    \
+   char* val  = get(argc, argv, #_name); \
+   if (val is NULL)                      \
+      cfg->_name = _default;             \
+   else                                  \
+      cfg->_name = _type(val);           \
 }
 
 char* get(int argc, char **argv, char *key) {

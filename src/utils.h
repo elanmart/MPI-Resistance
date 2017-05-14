@@ -4,12 +4,12 @@
 #define PR_UTILS_H
 
 
+#include <evdns.h>
+
+
 /*
  *  logical operators
  */
-
-#include <evdns.h>
-
 #define not !
 #define and &&
 #define or  ||
@@ -19,11 +19,13 @@
 /*
  *  logging
  */
-#define DASH "====================================n"
-#define LOG(node, msg, ...) printf("\n"           \
-                                   DASH           \
-                                   "Node :: %d\n" \
-                                   "msg  :: " msg "\n" DASH, node, ##__VA_ARGS__)
+#define DASH "=====================================\n"
+#define LOG(node, msg, ...) printf("\n"                 \
+                                   DASH                 \
+                                   "Node :: %d     \n"  \
+                                   "msg  :: " msg "\n"  \
+                                   DASH,                \
+                                   node, ##__VA_ARGS__)
 
 /*
  *  loops
@@ -31,6 +33,9 @@
 #define range(_name, _max) (int _name=0; _name<_max; _name++)
 
 
+/*
+ *  functions
+ */
 uint32_t unsafe_len(void* arr);
 
 

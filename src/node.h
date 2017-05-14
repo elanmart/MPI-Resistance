@@ -7,12 +7,14 @@
 
 
 typedef struct _Node {
-   struct uint32_t* parent;
-   struct uint32_t* neighbours;
-   struct uint32_t* children;
+   uint32_t ID;
 
-   struct uint32_t* awaiting_resource;
-   struct uint32_t* participants;
+   uint32_t* parent;
+   uint32_t* neighbours;
+   uint32_t* children;
+
+   uint32_t* awaiting_resource;
+   uint32_t* participants;
 
    uint8_t       is_engaded;
    uint8_t       has_resource;

@@ -7,18 +7,11 @@
 #include "src/config.h"
 
 
-int32_t* _init_mpi() {
-   int32_t size, rank;
+void _init_mpi(int32_t* size, int32_t* rank) {
 
    MPI_Init(NULL, NULL);
-   MPI_Comm_size(MPI_COMM_WORLD, &size);
-   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-   int* status = malloc(sizeof(int) * 2);
-   status[0] = size;
-   status[1] = rank;
-
-   return status;
+   MPI_Comm_size(MPI_COMM_WORLD, size);
+   MPI_Comm_rank(MPI_COMM_WORLD, rank);
 }
 
 void _exit_mpi() {
@@ -27,7 +20,7 @@ void _exit_mpi() {
 
 
 
-Node* _init_tree(config* cfg) {
+Node* _init_tree(int32_t n, config* cfg) {
    Node* nodes = malloc(cfg->max_nodes * sizeof(Node));
 
    return nodes;
@@ -35,17 +28,17 @@ Node* _init_tree(config* cfg) {
 
 int main (int argc, char* argv[])
 {
-   int32_t* status = _init_mpi();
+   int32_t size, rank;
+   _init_mpi(&size, &rank);
 
-   if (status[1] is 0) {
+   if (rank is 0) {
       config* cfg = parse(argc, argv);
-      Node* tree  = _init_tree(cfg);
+      Node* tree  = _init_tree(size, cfg);
    }
 
    event_loop();
 
-   free(status);
    _exit_mpi();
-   
+
    return 0;
 }
