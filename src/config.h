@@ -10,12 +10,12 @@
 
 
 #define INT    atoi
-#define REAL   atof
+#define FLOAT  atof
 #define STR
 
 typedef struct _config {
    size_t max_nodes;
-   real nb_proba;
+   float nb_proba;
    char *mode;
 } config;
 
