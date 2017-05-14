@@ -17,16 +17,17 @@ typedef struct _Node {
    uint32_t* awaiting_resource;
    uint32_t* participants;
 
-   uint8_t       is_engaded;
-   uint8_t       has_resource;
-   uint8_t       has_acceptor;
-   uint64_t      time_penalty;
+   uint8_t   is_engaded;
+   uint8_t   has_resource;
+   uint8_t   has_acceptor;
+   uint64_t  time_penalty;
 
-   char*         messages;
+   char*     messages;
 } Node;
 
 
 void init(Node *n);
+void finalize(Node *n);
 void add_neighbour(Node* n, uint32_t idx);
 void event_loop(Node* n);
 void pass_acceptor(Node* n);

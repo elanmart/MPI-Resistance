@@ -3,6 +3,7 @@
 #include <zconf.h>
 #include "src/node.h"
 #include "src/config.h"
+#include "src/backend.h"
 
 
 void _init_mpi(int32_t* size, int32_t* rank) {
@@ -33,6 +34,7 @@ Node* _init_tree(int32_t n, config* cfg) {
       n_children   = (uint32_t) (rand() % max_children) + 1;
 
       Node* node       = nodes + idx;
+      node->ID         = idx;
       node->children   = safe_malloc(n_children, sizeof(uint32_t));
       node->neighbours = safe_malloc(cfg->max_neighs, sizeof(uint32_t));
 
@@ -72,17 +74,26 @@ Node* _init_tree(int32_t n, config* cfg) {
    return nodes;
 }
 
+
 int main (int argc, char* argv[])
 {
    int32_t size, rank;
    _init_mpi(&size, &rank);
 
-   if (rank is 0) {
-      config* cfg = parse(argc, argv);
-      Node* tree  = _init_tree(size, cfg);
-   }
+   config* cfg = parse(argc, argv);
+   MPI_Datatype dtype = make_node_dtype(cfg);
 
-   event_loop();
+   if (rank is 0) {
+      Node* tree  = _init_tree(size, cfg);
+      for range(i, size) {
+         MPI_Send_Default(tree + i, dtype, i);
+      }
+
+      finalize(tree + 0);
+   } else {
+      Node* n = malloc(sizeof(Node));
+      MPI_Recv_Default(n, dtype, 0);
+   }
 
    _exit_mpi();
 
