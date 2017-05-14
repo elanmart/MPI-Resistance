@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
 project(PR)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+find_package(MPI REQUIRED)
+include_directories(${MPI_INCLUDE_PATH})
 
-set(SOURCE_FILES main.cpp src/node.c src/node.h src/utils.c)
-include_directories(usr/include/mpi/)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+set(SOURCE_FILES main.c src/node.c src/node.h src/utils.c)
 
 add_executable(PR ${SOURCE_FILES})
+target_link_libraries(PR ${MPI_LIBRARIES})

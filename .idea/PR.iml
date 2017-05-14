@@ -5,25 +5,25 @@
       <sourceFolder url="file://$MODULE_DIR$/src/utils.c" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/node.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/node.c" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/main.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/main.c" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/CMakeLists.txt" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">
       <library name="Header Search Paths">
         <CLASSES>
+          <root url="file:///usr/lib/openmpi/include" />
           <root url="file:///usr/include" />
+          <root url="file://$USER_HOME$/anaconda3/include" />
           <root url="file://$USER_HOME$/anaconda3/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include" />
           <root url="file://$USER_HOME$/anaconda3/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include-fixed" />
-          <root url="file://$USER_HOME$/anaconda3/include" />
-          <root url="file://$USER_HOME$/anaconda3/gcc/include/c++" />
         </CLASSES>
         <SOURCES>
+          <root url="file:///usr/lib/openmpi/include" />
           <root url="file:///usr/include" />
+          <root url="file://$USER_HOME$/anaconda3/include" />
           <root url="file://$USER_HOME$/anaconda3/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include" />
           <root url="file://$USER_HOME$/anaconda3/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include-fixed" />
-          <root url="file://$USER_HOME$/anaconda3/include" />
-          <root url="file://$USER_HOME$/anaconda3/gcc/include/c++" />
         </SOURCES>
       </library>
     </orderEntry>
