@@ -6,30 +6,38 @@
 
 class Node {
 public:
+   // ctors
    Node();
    Node(int ID);
    Node(int* buffer);
+   void set_manager(Manager *m);
 
-   int32_t ID_;
-   int32_t level_;
+   // identity
+   int32_t  ID_;
+   int32_t  level_;
+   Manager* manager_ = nullptr;
 
-   bool STOP_;
-
+   // topology
    int32_t      parent_;
    set<int32_t> neighbours_;
    set<int32_t> children_;
 
+   // serialization
    pair<int, int*> serialize();
-   void deserialize(int* buffer);
+   void            deserialize(int* buffer);
 
+   // generic communication
    void start_event_loop();
+   void consume(Message &msg);
 
-   Message listen();
-   void handle(Message msg);
-   void tick();
-
+   // special skills
    void pass_acceptor();
    void initialzie_meeting();
+   void get_resource();
+   void get_accepatnce();
+
+   // synchronization
+   bool STOP_;
 };
 
 #define DASH "=====================================\n"

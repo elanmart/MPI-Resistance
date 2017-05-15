@@ -36,12 +36,34 @@ void Manager::mpi_exit() {
    MPI_Finalize();
 }
 
-void Manager::send_msg(Message msg, int dest) {
-   MPI_Send(&msg, 1, MSG_Dataype_, dest, NOTAG, MPI_COMM_WORLD);
+void Manager::communicate() {
+   send_msg();
+   recv_msg();
 }
 
-Message Manager::recv_msg() {
-   return Message();
+void Manager::send_msg() {
+   if (not outgoing.empty()){
+      Message msg = outgoing.front();
+      MPI_Send(&msg, 1, MSG_Dataype_, msg.to, NOTAG, MPI_COMM_WORLD);
+
+      outgoing.pop();
+   }
+}
+
+void Manager::recv_msg() {
+   int flag;
+   MPI_Status status;
+   MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
+
+   if (flag) {
+      Message msg;
+      int src = status.MPI_SOURCE;
+      MPI_Recv(&msg, 1, MSG_Dataype_, src, MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
+
+      msg.from = src;
+      incoming.push(msg);
+      incoming.pop();
+   }
 }
 
 bool Manager::is_root() {
@@ -53,16 +75,17 @@ int Manager::root() {
 }
 
 MPI_Datatype mpi_message_dtype(Config &cfg) {
-   int32_t k = 5;
+   int k = 5;
 
-//   int32_t      sizes[k]    = {1, cfg.max_children, cfg.max_neighbours, 1, 1};
-//   MPI_Datatype types[k]    = {MPI_UINT32_T, MPI_UINT32_T, MPI_UINT32_T, MPI_UINT8_T, MPI_UINT8_T};
-//   MPI_Aint     offsets[k]  = {offsetof(Node, parent), offsetof(Node, children), offsetof(Node, neighbours),
-//                               offsetof(Node, has_resource), offsetof(Node, has_acceptor)};
-//   MPI_Datatype node_dtype;
-//   MPI_Type_create_struct(k, sizes, offsets, types, &node_dtype);
-//   MPI_Type_commit(&node_dtype);
-//
-//   return node_dtype;
+   int          sizes[k]   = {1, 1, 1, 1, 8};
+   MPI_Datatype types[k]   = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT};
+   MPI_Aint     offsets[k] = {offsetof(Message, timestamp), offsetof(Message, sender), offsetof(Message, destination),
+                              offsetof(Message, word), offsetof(Message, payload)};
 
+   MPI_Datatype dtype;
+   MPI_Type_create_struct(k, sizes, offsets, types, &dtype);
+   MPI_Type_commit(&dtype);
+
+   return dtype;
 }
+

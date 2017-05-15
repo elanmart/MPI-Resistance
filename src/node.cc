@@ -16,33 +16,36 @@ Node::Node(int *buffer) {
    deserialize(buffer);
 }
 
+void Node::set_manager(Manager *m) {
+   manager_ = m;
+}
+
 // --- logic ---
 
 void Node::start_event_loop() {
    LOG("I'm alive!");
 
    while (not STOP_) {
-      Message msg = listen();
-      if (0){
-         handle(msg);
-      }
+      manager_->communicate();
 
-      if (0) {
-         pass_acceptor();
+      if (not manager_->incoming.empty()) {
+         Message msg = manager_->incoming.front();
+         consume(msg);
+         manager_->incoming.pop();
       }
 
       if (0) {
          initialzie_meeting();
       }
+
+      if (0) {
+         pass_acceptor();
+      }
    }
 }
 
-Message Node::listen() {
-   return Message();
-}
+void Node::consume(Message &msg) {
 
-void Node::handle(Message msg) {
-   return;
 }
 
 // --- serialze ---
@@ -88,4 +91,3 @@ void Node::deserialize(int* buffer) {
    for (int i=offset; i<offset+n_neighbours; i++)
       neighbours_.insert(buffer[i]);
 }
-
