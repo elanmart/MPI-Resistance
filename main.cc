@@ -72,6 +72,6 @@ int main (int argc, char* argv[])
       local = manager.recv_node(manager.root());
    }
 
-   local.start();
+   local.start_event_loop();
    return 0;
 }

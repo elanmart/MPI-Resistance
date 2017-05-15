@@ -1,9 +1,11 @@
 #include "node.h"
-#include "utils.h"
+
+// --- ctors ---
 
 Node::Node() {
    level_  = 0;
    parent_ = -1;
+   STOP_   = false;
 }
 
 Node::Node(int ID) : Node() {
@@ -13,6 +15,37 @@ Node::Node(int ID) : Node() {
 Node::Node(int *buffer) {
    deserialize(buffer);
 }
+
+// --- logic ---
+
+void Node::start_event_loop() {
+   LOG("I'm alive!");
+
+   while (not STOP_) {
+      Message msg = listen();
+      if (0){
+         handle(msg);
+      }
+
+      if (0) {
+         pass_acceptor();
+      }
+
+      if (0) {
+         initialzie_meeting();
+      }
+   }
+}
+
+Message Node::listen() {
+   return Message();
+}
+
+void Node::handle(Message msg) {
+   return;
+}
+
+// --- serialze ---
 
 pair<int, int *> Node::serialize() {
    int n_children   = (int) children_.size();
@@ -56,12 +89,3 @@ void Node::deserialize(int* buffer) {
       neighbours_.insert(buffer[i]);
 }
 
-void Node::start() {
-   LOG("I'm alive!");
-
-   start_event_loop();
-}
-
-void Node::start_event_loop() {
-
-}
