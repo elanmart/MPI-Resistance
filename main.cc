@@ -2,6 +2,7 @@
 #include "src/config.h"
 #include "src/backend.h"
 #include "src/utils.h"
+#include "src/comm.h"
 
 
 #define ROOT  0
@@ -60,9 +61,10 @@ vector<Node> _init_tree(int n, Config &cfg) {
 
 int main (int argc, char* argv[])
 {
-   auto cfg    = Config(argc, argv);
-   auto status = mpi_init();
-   Node local;
+   auto cfg     = Config(argc, argv);
+   auto manager = Manager(cfg);
+   auto status  = mpi_init();
+   Node    local;
 
    int size{status.first}, rank{status.second};
 
@@ -71,15 +73,11 @@ int main (int argc, char* argv[])
       local     = tree[0];
 
       for (int i = 1; i < size; ++i) {
-         auto& n   = tree[i];
-         auto  msg = n.serialize();
-
-         mpi_send(&msg.second, msg.first, MPI_INT, i);
+         manager.send_node(tree[i], i);
       }
 
    } else {
-      int* buffer = mpi_recv(ROOT, MPI_INT);
-      local = Node(buffer);
+      local = manager.recv_node(ROOT);
    }
 
    local.start();
