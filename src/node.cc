@@ -24,6 +24,7 @@ void Node::set_manager(Manager *m) {
 
 // --- logic ---
 
+// todo: focus on this
 void Node::start_event_loop() {
    LOG("I'm alive!");
    Message msg;
@@ -51,13 +52,10 @@ void Node::start_event_loop() {
    }
 }
 
+// todo: focus on this
 void Node::consume(Message &msg) {
-
-   // if we've seen the message, don't do anything
-   auto key = identifier(msg);
-   if (msg_cache_.find(key) != msg_cache_.end())
+   if (not accept(msg))
       return;
-   msg_cache_.insert(key);
 
    // not to me. Forward everywhyere
    if (msg.destination != ID_ or msg.destination == ALL) {
@@ -65,20 +63,30 @@ void Node::consume(Message &msg) {
    }
 }
 
+bool Node::accept(Message &msg) {
+   auto key = identifier(msg);
+
+   if (msg_cache_.find(key) != msg_cache_.end()) {
+      return false;
+   } else {
+      msg_cache_.insert(key);
+      return true;
+   }
+}
+
 void Node::send_to(Message msg, int dest) {
-   LOG("Sending msg number: %d to: %d", msg.number, dest);
    manager_->push(msg, dest);
+}
+
+void Node::send_to(Message msg, set<int> recipients) {
+   for (auto id : recipients)
+      send_to(msg, id);
 }
 
 void Node::broadcast(Message msg) {
    send_to(msg, parent_);
    send_to(msg, children_);
    send_to(msg, neighbours_);
-}
-
-void Node::send_to(Message msg, set<int> recipients) {
-   for (auto id : recipients)
-      send_to(msg, id);
 }
 
 // --- serialze ---

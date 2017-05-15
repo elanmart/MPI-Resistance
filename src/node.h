@@ -48,6 +48,8 @@ public:
    bool STOP_;
 
    void broadcast(Message msg);
+
+   bool accept(Message &msg);
 };
 
 #define DASH "=====================================\n"

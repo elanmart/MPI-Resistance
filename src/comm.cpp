@@ -1,6 +1,8 @@
 #include "comm.h"
 #include "utils.h"
 
+// --- ctors ---
+
 Manager::Manager(Config cfg) {
    mpi_init();
 
@@ -11,6 +13,18 @@ Manager::Manager(Config cfg) {
 Manager::~Manager() {
    mpi_exit();
 }
+
+void Manager::mpi_init() {
+   MPI_Init(NULL, NULL);
+   MPI_Comm_size(MPI_COMM_WORLD, &size_);
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
+}
+
+void Manager::mpi_exit() {
+   MPI_Finalize();
+}
+
+// --- setup ---
 
 void Manager::send_node(Node &n, int dest) {
    auto msg = n.serialize();
@@ -26,15 +40,26 @@ Node Manager::recv_node(int src) {
    return n;
 }
 
-void Manager::mpi_init() {
-   MPI_Init(NULL, NULL);
-   MPI_Comm_size(MPI_COMM_WORLD, &size_);
-   MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
+// --- queues ---
+bool Manager::get(Message *msg) {
+   if (not incoming.empty()) {
+      (*msg) = incoming.front();
+      incoming.pop();
+
+      return true;
+   }
+
+   return false;
 }
 
-void Manager::mpi_exit() {
-   MPI_Finalize();
+void Manager::push(Message msg, int dest) {
+   if (msg.__from__ != dest and dest >= 0) {
+      msg.__to__ = dest;
+      outgoing.push(msg);
+   }
 }
+
+// --- comms ---
 
 void Manager::communicate() {
    send_msg();
@@ -65,30 +90,14 @@ void Manager::recv_msg() {
    }
 }
 
+// --- utils ---
+
 bool Manager::is_root() {
    return (rank_ == ROOT);
 }
 
 int Manager::root() {
    return ROOT;
-}
-
-bool Manager::get(Message *msg) {
-   if (not incoming.empty()) {
-      (*msg) = incoming.front();
-      incoming.pop();
-
-      return true;
-   }
-
-   return false;
-}
-
-void Manager::push(Message msg, int dest) {
-   if (msg.__from__ != dest and dest >= 0) {
-      msg.__to__ = dest;
-      outgoing.push(msg);
-   }
 }
 
 MPI_Datatype mpi_message_dtype(Config &cfg) {
