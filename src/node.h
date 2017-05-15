@@ -33,6 +33,8 @@ public:
    void consume(Message &msg);
    void send_to(Message msg, set<int> recipients);
    void send_to(Message msg, int dest);
+
+   // message bookkeeping
    set<int64_t> msg_cache_; // todo: replace set with a map;
    int msg_number_;
 

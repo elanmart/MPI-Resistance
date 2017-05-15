@@ -17,7 +17,7 @@ Message create_message(int &msg_number, int sender, int destination) {
                   (int) time(NULL),
                   sender,
                   destination,
-                  Word::NONE,
+                  Words::NONE,
                   {0, 0, 0, 0, 0, 0, 0, 0}
    };
 
@@ -26,14 +26,14 @@ Message create_message(int &msg_number, int sender, int destination) {
    return msg;
 }
 
-Message create_message(int &msg_number, int sender, int destination, Word w) {
+Message create_message(int &msg_number, int sender, int destination, Words w) {
    auto msg = create_message(msg_number, sender, destination);
    msg.word = w;
 
    return msg;
 }
 
-Message create_message(int &msg_number, int sender, int destination, Word w, int payload[]) {
+Message create_message(int &msg_number, int sender, int destination, Words w, int payload[]) {
    auto msg = create_message(msg_number, sender, destination, w);
    for (int i = 0; i < 8; ++i) {
       msg.payload[i] = payload[i];

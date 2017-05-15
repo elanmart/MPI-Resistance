@@ -23,13 +23,13 @@ void Config::parse_args(int argc, char** argv) {
          help();
          exit(EXIT_FAILURE);
 
-      } else if (arg_match(idx, "--max-children_")) {
+      } else if (arg_match(idx, "--max-children")) {
          max_children = atoi(argv[idx + 1]);
 
-      } else if (arg_match(idx, "--max-neighbours_")) {
+      } else if (arg_match(idx, "--max-neighbours")) {
          max_neighbours = atoi(argv[idx + 1]);
 
-      } else if (arg_match(idx, "--avg-neighbours_")) {
+      } else if (arg_match(idx, "--avg-neighbours")) {
          avg_neighbours = atoi(argv[idx + 1]);
       }
    }
@@ -37,9 +37,9 @@ void Config::parse_args(int argc, char** argv) {
 
 void Config::help() {
    cerr    << "\n Available options:\n"
-           << "  --max-children_     maximum number of children_ per node  [" << max_children   << "]\n"
-           << "  --max-neighbours_   maximum number of neihbours per node [" << max_neighbours << "]\n"
-           << "  --avg-neighbours_   average number of neihbours per node [" << avg_neighbours << "]\n"
+           << "  --max-children     maximum number of children_ per node  [" << max_children   << "]\n"
+           << "  --max-neighbours   maximum number of neihbours per node [" << max_neighbours << "]\n"
+           << "  --avg-neighbours   average number of neihbours per node [" << avg_neighbours << "]\n"
            << endl;
 }
 

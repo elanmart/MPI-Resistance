@@ -26,19 +26,13 @@ void Node::set_manager(Manager *m) {
 
 void Node::start_event_loop() {
    LOG("I'm alive!");
-
-   int xx = 0;
-
    Message msg;
+
    while (not STOP_) {
       manager_->communicate();
 
       if (manager_->get(&msg))
          consume(msg);
-
-      if (((xx++) == 0) and (ID_ == 0)) {
-         broadcast(create_message(msg_number_, ID_, ALL));
-      }
 
       if (0) {
          initialzie_meeting();
@@ -58,16 +52,12 @@ void Node::start_event_loop() {
 }
 
 void Node::consume(Message &msg) {
+
    // if we've seen the message, don't do anything
-
-   LOG("MSG arrived");
-
    auto key = identifier(msg);
    if (msg_cache_.find(key) != msg_cache_.end())
       return;
    msg_cache_.insert(key);
-
-   LOG("MSG processed");
 
    // not to me. Forward everywhyere
    if (msg.destination != ID_ or msg.destination == ALL) {

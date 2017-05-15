@@ -6,7 +6,10 @@
 #include "message.h"
 #include "node.h"
 
-#define BUFFER_SIZE 4096 //todo: dynamic buffer? Using MPI_Status?
+//TODO: dynamic buffer?
+//TODO: NOTAG --> MPI_ANY_TAG
+//TODO: ROOT --> ?
+#define BUFFER_SIZE 4096
 #define NOTAG 0
 #define ROOT  0
 #define ALL   -1

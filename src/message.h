@@ -3,7 +3,7 @@
 
 #include "common.h"
 
-enum Word {
+enum Words {
    // resource acquisition
    RESOURCE_REQUEST = 0,
    RESOURCE_ANSWER  = 1,
@@ -35,7 +35,7 @@ typedef struct _Message {
    int  timestamp;
    int  sender;
    int  destination;
-   Word word;
+   Words word;
 
    int payload[8];
 } Message;
@@ -44,9 +44,9 @@ int64_t identifier(Message &m);
 
 Message create_message(int &msg_number, int sender, int destination);
 
-Message create_message(int &msg_number, int sender, int destination, Word w);
+Message create_message(int &msg_number, int sender, int destination, Words w);
 
-Message create_message(int &msg_number, int sender, int destination, Word w, int payload[]);
+Message create_message(int &msg_number, int sender, int destination, Words w, int payload[]);
 
 Message detach(Message other);
 
