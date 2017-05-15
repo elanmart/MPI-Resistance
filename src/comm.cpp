@@ -44,6 +44,14 @@ Message Manager::recv_msg() {
    return Message();
 }
 
+bool Manager::is_root() {
+   return (rank_ == ROOT);
+}
+
+int Manager::root() {
+   return ROOT;
+}
+
 MPI_Datatype mpi_message_dtype(Config &cfg) {
    int32_t k = 5;
 

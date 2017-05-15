@@ -6,6 +6,8 @@
 
 #define BUFFER_SIZE 4096 //todo: dynamic buffer? Using MPI_Status?
 #define NOTAG 0
+#define ROOT  0
+
 
 typedef struct _Message {
 
@@ -20,6 +22,9 @@ public:
 
    int size_;
    int rank_;
+
+   bool is_root();
+   int  root();
 
    Config       cfg_;
    MPI_Datatype MSG_Dataype_;

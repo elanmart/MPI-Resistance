@@ -1,14 +1,10 @@
 #include "src/node.h"
 #include "src/config.h"
-#include "src/backend.h"
 #include "src/utils.h"
 #include "src/comm.h"
 
 
-#define ROOT  0
-
-
-vector<Node> _init_tree(int n, Config &cfg) {
+vector<Node> create_tree(int n, Config &cfg) {
    auto nodes = vector<Node>((uint) n);
 
    int cnt = 0;
@@ -58,30 +54,24 @@ vector<Node> _init_tree(int n, Config &cfg) {
    return nodes;
 }
 
-
 int main (int argc, char* argv[])
 {
    auto cfg     = Config(argc, argv);
    auto manager = Manager(cfg);
-   auto status  = mpi_init();
    Node    local;
 
-   int size{status.first}, rank{status.second};
-
-   if (rank == 0) {
-      auto tree = _init_tree(size, cfg);
+   if (manager.is_root()) {
+      auto tree = create_tree(manager.size_, cfg);
       local     = tree[0];
 
-      for (int i = 1; i < size; ++i) {
+      for (int i = 1; i < manager.size_; ++i) {
          manager.send_node(tree[i], i);
       }
 
    } else {
-      local = manager.recv_node(ROOT);
+      local = manager.recv_node(manager.root());
    }
 
    local.start();
-
-   mpi_exit();
    return 0;
 }
