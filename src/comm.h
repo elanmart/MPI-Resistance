@@ -1,21 +1,21 @@
 #ifndef PR_COMM_H
 #define PR_COMM_H
 
-#include "node.h"
+#include "common.h"
 #include "config.h"
 #include "message.h"
+#include "node.h"
 
 #define BUFFER_SIZE 4096 //todo: dynamic buffer? Using MPI_Status?
 #define NOTAG 0
 #define ROOT  0
+#define ALL   -1
 
-
-MPI_Datatype mpi_message_dtype(Config &cfg);
+class Node;
 
 class Manager {
 public:
    // ctors
-   Manager();
    Manager(Config cfg);
    ~Manager();
 
@@ -35,6 +35,8 @@ public:
    void recv_msg();
 
    // queues
+   bool get(Message *msg);
+   void push(Message msg, int dest);
    queue<Message> incoming;
    queue<Message> outgoing;
 
@@ -46,5 +48,7 @@ public:
    bool is_root();
    int  root();
 };
+
+MPI_Datatype mpi_message_dtype(Config &cfg);
 
 #endif //PR_COMM_H

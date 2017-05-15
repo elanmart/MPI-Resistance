@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <evdns.h>
 #include <boost/range/irange.hpp>
 #include <vector>
 #include <tuple>
@@ -18,6 +17,8 @@
 #include <set>
 #include <random>
 #include <queue>
+#include <time.h>
+
 
 using namespace std;
 

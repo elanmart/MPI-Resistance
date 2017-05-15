@@ -1,4 +1,5 @@
 #include "comm.h"
+#include "utils.h"
 
 Manager::Manager(Config cfg) {
    mpi_init();
@@ -13,8 +14,7 @@ Manager::~Manager() {
 
 void Manager::send_node(Node &n, int dest) {
    auto msg = n.serialize();
-
-   MPI_Send(&msg.second, msg.first, MPI_INT, dest, NOTAG, MPI_COMM_WORLD);
+   MPI_Send(msg.second, msg.first, MPI_INT, dest, NOTAG, MPI_COMM_WORLD);
 }
 
 Node Manager::recv_node(int src) {
@@ -44,7 +44,7 @@ void Manager::communicate() {
 void Manager::send_msg() {
    if (not outgoing.empty()){
       Message msg = outgoing.front();
-      MPI_Send(&msg, 1, MSG_Dataype_, msg.to, NOTAG, MPI_COMM_WORLD);
+      MPI_Send(&msg, 1, MSG_Dataype_, msg.__to__, NOTAG, MPI_COMM_WORLD);
 
       outgoing.pop();
    }
@@ -60,9 +60,8 @@ void Manager::recv_msg() {
       int src = status.MPI_SOURCE;
       MPI_Recv(&msg, 1, MSG_Dataype_, src, MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
 
-      msg.from = src;
+      msg.__from__ = src;
       incoming.push(msg);
-      incoming.pop();
    }
 }
 
@@ -74,13 +73,32 @@ int Manager::root() {
    return ROOT;
 }
 
-MPI_Datatype mpi_message_dtype(Config &cfg) {
-   int k = 5;
+bool Manager::get(Message *msg) {
+   if (not incoming.empty()) {
+      (*msg) = incoming.front();
+      incoming.pop();
 
-   int          sizes[k]   = {1, 1, 1, 1, 8};
-   MPI_Datatype types[k]   = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT};
-   MPI_Aint     offsets[k] = {offsetof(Message, timestamp), offsetof(Message, sender), offsetof(Message, destination),
-                              offsetof(Message, word), offsetof(Message, payload)};
+      return true;
+   }
+
+   return false;
+}
+
+void Manager::push(Message msg, int dest) {
+   if (msg.__from__ != dest and dest >= 0) {
+      msg.__to__ = dest;
+      outgoing.push(msg);
+   }
+}
+
+MPI_Datatype mpi_message_dtype(Config &cfg) {
+   const int k = 6;
+
+   int          sizes[k]   = {1, 1, 1, 1, 1, 8};
+   MPI_Datatype types[k]   = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT};
+   MPI_Aint     offsets[k] = {offsetof(Message, number), offsetof(Message, timestamp),
+                              offsetof(Message, sender), offsetof(Message, destination),
+                              offsetof(Message, word),   offsetof(Message, payload)};
 
    MPI_Datatype dtype;
    MPI_Type_create_struct(k, sizes, offsets, types, &dtype);

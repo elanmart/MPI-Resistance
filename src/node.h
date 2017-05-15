@@ -4,6 +4,8 @@
 #include "common.h"
 #include "comm.h"
 
+class Manager; // todo: handle this;
+
 class Node {
 public:
    // ctors
@@ -29,6 +31,10 @@ public:
    // generic communication
    void start_event_loop();
    void consume(Message &msg);
+   void send_to(Message msg, set<int> recipients);
+   void send_to(Message msg, int dest);
+   set<int64_t> msg_cache_; // todo: replace set with a map;
+   int msg_number_;
 
    // special skills
    void pass_acceptor();
@@ -38,6 +44,8 @@ public:
 
    // synchronization
    bool STOP_;
+
+   void broadcast(Message msg);
 };
 
 #define DASH "=====================================\n"

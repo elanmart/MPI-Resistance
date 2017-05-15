@@ -22,23 +22,33 @@ enum Word {
    DECLINE       = 10,
    ACCEPT        = 11,
    NEW_ORG_PROBE = 12,
-   NEW_ORG       = 13
+   NEW_ORG       = 13,
+
+   NONE = 14
 };
 
 typedef struct _Message {
-   int from;
-   int to;
+   int __from__;
+   int __to__;
 
-   int timestamp;
-   int sender;
-   int destination;
-
+   int  number;
+   int  timestamp;
+   int  sender;
+   int  destination;
    Word word;
 
    int payload[8];
 } Message;
 
 int64_t identifier(Message &m);
+
+Message create_message(int &msg_number, int sender, int destination);
+
+Message create_message(int &msg_number, int sender, int destination, Word w);
+
+Message create_message(int &msg_number, int sender, int destination, Word w, int payload[]);
+
+Message detach(Message other);
 
 
 #endif //PR_MESSAGE_H

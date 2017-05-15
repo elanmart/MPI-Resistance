@@ -1,22 +1,21 @@
 #include "src/node.h"
-#include "src/config.h"
 #include "src/utils.h"
-#include "src/comm.h"
 
 
 vector<Node> create_tree(int n, Config &cfg) {
    auto nodes = vector<Node>((uint) n);
+   for (int i = 0; i < nodes.size(); ++i) {
+      nodes[i].ID_ = i;
+   }
 
-   int cnt = 0;
+   int cnt = 1;
    int idx = 0;
    int n_children;
 
    // topology
    while (cnt < n) {
       auto& node = nodes[idx];
-
-      n_children       = randint(1, min(n - cnt, cfg.max_children));
-      node.ID_         = idx;
+      n_children = randint(1, min(n - cnt, cfg.max_children));
 
       for (int i = 0; i < n_children; ++i) {
          nodes[cnt + i].parent_ = idx;
@@ -60,6 +59,7 @@ int main (int argc, char* argv[])
    auto manager = Manager(cfg);
    Node    local;
 
+
    if (manager.is_root()) {
       auto tree = create_tree(manager.size_, cfg);
       local     = tree[0];
@@ -72,6 +72,8 @@ int main (int argc, char* argv[])
       local = manager.recv_node(manager.root());
    }
 
+
+   local.set_manager(&manager);
    local.start_event_loop();
    return 0;
 }
