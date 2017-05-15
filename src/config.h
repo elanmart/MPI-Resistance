@@ -10,9 +10,12 @@ public:
    Config();
    Config(int argc, char** argv);
 
-   int32_t max_children;
-   int32_t max_neighbours;
-   int32_t avg_neighbours;
+   int max_children;
+   int max_neighbours;
+   int avg_neighbours;
+
+   float acceptor_proba; // todo: add this to parser
+   float resource_proba; // todo: add this to parser
 
    void parse_args(int argc, char** argv);
    void help();

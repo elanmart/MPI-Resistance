@@ -20,6 +20,7 @@ public:
    void deserialize(int* buffer);
 
    void start();
+   void start_event_loop();
 };
 
 

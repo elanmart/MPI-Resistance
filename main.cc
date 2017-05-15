@@ -4,9 +4,7 @@
 #include "src/utils.h"
 
 
-#define BUFFER_SIZE 4096
-#define ROOT 0
-#define NOTAG 0
+#define ROOT  0
 
 
 vector<Node> _init_tree(int n, Config &cfg) {
@@ -63,7 +61,7 @@ vector<Node> _init_tree(int n, Config &cfg) {
 int main (int argc, char* argv[])
 {
    auto cfg    = Config(argc, argv);
-   auto status = init_mpi();
+   auto status = mpi_init();
    Node local;
 
    int size{status.first}, rank{status.second};
@@ -76,19 +74,16 @@ int main (int argc, char* argv[])
          auto& n   = tree[i];
          auto  msg = n.serialize();
 
-         MPI_Send(&msg.second, msg.first, MPI_INT, i, NOTAG, MPI_COMM_WORLD);
+         mpi_send(&msg.second, msg.first, MPI_INT, i);
       }
 
    } else {
-      int* buffer = new int[BUFFER_SIZE]; //todo: dynamic buffer?;
-      MPI_Recv(buffer, BUFFER_SIZE, MPI_INT, ROOT, NOTAG, MPI_COMM_WORLD, NULL);
-
+      int* buffer = mpi_recv(ROOT, MPI_INT);
       local = Node(buffer);
    }
 
    local.start();
 
-   exit_mpi();
-
+   mpi_exit();
    return 0;
 }

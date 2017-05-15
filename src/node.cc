@@ -59,5 +59,9 @@ void Node::deserialize(int* buffer) {
 void Node::start() {
    LOG("I'm alive!");
 
+   start_event_loop();
+}
+
+void Node::start_event_loop() {
 
 }

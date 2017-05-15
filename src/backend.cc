@@ -1,7 +1,7 @@
 #include "backend.h"
 
 
-pair<int, int> init_mpi() {
+pair<int, int> mpi_init() {
    int size, rank;
 
    MPI_Init(NULL, NULL);
@@ -11,7 +11,13 @@ pair<int, int> init_mpi() {
    return {size, rank};
 }
 
-void exit_mpi() {
+void mpi_exit() {
    MPI_Finalize();
 }
+
+void mpi_send(void* data, int count, MPI_Datatype dtype, int dest) {
+   MPI_Send(data, count, dtype, dest, NOTAG, MPI_COMM_WORLD);
+}
+
+
 
