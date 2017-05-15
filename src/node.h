@@ -1,39 +1,26 @@
 #ifndef PR_NODE_H
 #define PR_NODE_H
 
+#include "common.h"
 
-#include <stdint.h>
-#include "utils.h"
+class Node {
+public:
+   Node();
+   Node(int ID);
+   Node(int* buffer);
 
+   int32_t ID_;
+   int32_t level_;
 
-typedef struct _Node {
-   uint32_t ID;
-   uint32_t level;
+   int32_t      parent_;
+   set<int32_t> neighbours_;
+   set<int32_t> children_;
 
-   uint32_t  parent;
-   uint32_t* neighbours;
-   uint32_t* children;
+   pair<int, int*> serialize();
+   void deserialize(int* buffer);
 
-   uint32_t* awaiting_resource;
-   uint32_t* participants;
-
-   uint8_t   is_engaded;
-   uint8_t   has_resource;
-   uint8_t   has_acceptor;
-   uint64_t  time_penalty;
-
-   char*     messages;
-} Node;
-
-
-void init(Node *n);
-void finalize(Node *n);
-void add_neighbour(Node* n, uint32_t idx);
-void start(Node* n);
-void pass_acceptor(Node* n);
-void get_resource(Node* n);
-void get_acceptance(Node* n);
-void gather_nodes(Node* n);
+   void start();
+};
 
 
 #endif //PR_NODE_H

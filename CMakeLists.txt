@@ -4,8 +4,8 @@ project(PR)
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-set(SOURCE_FILES main.c src/node.c src/node.h src/utils.c src/utils.h src/config.h src/config.c src/backend.c src/backend.h)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(SOURCE_FILES main.cc src/node.cc src/node.h src/utils.cc src/utils.h src/config.h src/config.cc src/backend.cc src/backend.h src/common.h)
 
 add_executable(PR ${SOURCE_FILES})
 target_link_libraries(PR ${MPI_LIBRARIES})
