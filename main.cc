@@ -50,6 +50,9 @@ vector<Node> create_tree(int n, Config &cfg) {
       }
    }
 
+   // resource
+
+
    return nodes;
 }
 

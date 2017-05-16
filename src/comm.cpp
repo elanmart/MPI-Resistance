@@ -41,6 +41,7 @@ Node Manager::recv_node(int src) {
 }
 
 // --- queues ---
+
 bool Manager::get(Message *msg) {
    if (not incoming.empty()) {
       (*msg) = incoming.front();
