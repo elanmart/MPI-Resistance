@@ -51,7 +51,9 @@ vector<Node> create_tree(int n, Config &cfg) {
    }
 
    // resource
-
+   for (int i = 0; i < cfg.n_resources; ++i) {
+      nodes[randint(0, (int) nodes.size())].resource_count_ += 1;
+   }
 
    return nodes;
 }

@@ -2,9 +2,10 @@
 
 
 Config::Config() {
-   max_children   = 4;
-   max_neighbours = 4;
+   max_children   = 3;
+   max_neighbours = 3;
    avg_neighbours = 2;
+   n_resources    = 2;
 }
 
 void Config::parse_args(int argc, char** argv) {
@@ -31,6 +32,9 @@ void Config::parse_args(int argc, char** argv) {
 
       } else if (arg_match(idx, "--avg-neighbours")) {
          avg_neighbours = atoi(argv[idx + 1]);
+
+      } else if (arg_match(idx, "--n-resources")) {
+         n_resources = atoi(argv[idx + 1]);
       }
    }
 }

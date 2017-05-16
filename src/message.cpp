@@ -10,7 +10,7 @@ int64_t identifier(Message &m) {
    return ID;
 }
 
-Message create_message(int &msg_number, int sender, int destination) {
+Message  create_message(int msg_number, int sender, int destination) {
    Message msg = {-1,
                   -1,
                   msg_number,
@@ -21,19 +21,17 @@ Message create_message(int &msg_number, int sender, int destination) {
                   {0, 0, 0, 0, 0, 0, 0, 0}
    };
 
-   msg_number++;
-
    return msg;
 }
 
-Message create_message(int &msg_number, int sender, int destination, Words w) {
+Message create_message(int msg_number, int sender, int destination, Words w) {
    auto msg = create_message(msg_number, sender, destination);
    msg.word = w;
 
    return msg;
 }
 
-Message create_message(int &msg_number, int sender, int destination, Words w, int payload[]) {
+Message create_message(int msg_number, int sender, int destination, Words w, int payload[]) {
    auto msg = create_message(msg_number, sender, destination, w);
    for (int i = 0; i < 8; ++i) {
       msg.payload[i] = payload[i];

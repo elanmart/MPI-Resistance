@@ -14,6 +14,8 @@ public:
    int max_neighbours;
    int avg_neighbours;
 
+   int n_resources;
+
    float acceptor_proba; // todo: add this to parser
    float resource_proba; // todo: add this to parser
 

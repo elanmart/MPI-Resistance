@@ -9,6 +9,7 @@ enum Words {
    RESOURCE_ANSWER  = 1,
    RESOURCE_ACK     = 2,
    RESOURCE_SENT    = 3,
+   RESOURCE_DEN     = 15,
 
    // acceptance acquisition
    MEETING_REQUEST  = 4,
@@ -42,11 +43,9 @@ typedef struct _Message {
 
 int64_t identifier(Message &m);
 
-Message create_message(int &msg_number, int sender, int destination);
-
-Message create_message(int &msg_number, int sender, int destination, Words w);
-
-Message create_message(int &msg_number, int sender, int destination, Words w, int payload[]);
+Message create_message(int msg_number, int sender, int destination);
+Message create_message(int msg_number, int sender, int destination, Words w);
+Message create_message(int msg_number, int sender, int destination, Words w, int payload[]);
 
 Message detach(Message other);
 

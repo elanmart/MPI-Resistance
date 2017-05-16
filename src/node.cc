@@ -4,10 +4,12 @@
 // --- ctors ---
 
 Node::Node() {
-   level_     = 0;
-   parent_    = -1;
-   msg_number_ = 0;
-   STOP_      = false;
+   level_          = 0;
+   parent_         = -1;
+   msg_number_     = 0;
+   resource_count_ = 0;
+   resource_state_ = ResourceState::IDLE;
+   STOP_           = false;
 }
 
 Node::Node(int ID) : Node() {
@@ -22,21 +24,43 @@ void Node::set_manager(Manager *m) {
    manager_ = m;
 }
 
+// --- comms ---
+
+// todo refactor all new_message methods to a single method?
+Message Node::new_message(int destination, Words w) {
+   auto msg = create_message(msg_number_++, ID_, destination, w);
+   msg_cache_.insert(identifier(msg));
+   broadcast(msg);
+   return msg;
+}
+
+Message Node::new_message(int destination, Words w, int *payload) {
+   auto msg = create_message(msg_number_++, ID_, destination, w, payload);
+   msg_cache_.insert(identifier(msg));
+   broadcast(msg);
+   return msg;
+}
+
 // --- logic ---
 
 // todo: focus on this
 void Node::start_event_loop() {
-   LOG("I'm alive!");
    Message msg;
 
+   if (resource_count_ > 0) {
+      LOG("I have resources: %d", resource_count_);
+   }
+
+   int send = 1;
    while (not STOP_) {
       manager_->communicate();
 
       if (manager_->get(&msg))
          consume(msg);
 
-      if (0) {
-         initialzie_meeting();
+      if (ID_ == 12 and send == 1) {
+         send = 0;
+         get_resource();
       }
 
       if (0) {
@@ -46,9 +70,6 @@ void Node::start_event_loop() {
       if (0) {
          // clear_message_buffer(); (look at timestamps at throw away the oldest);
       }
-
-      LOG("TICK");
-      sleep(1);
    }
 }
 
@@ -61,6 +82,71 @@ void Node::consume(Message &msg) {
    if (msg.destination != ID_ or msg.destination == ALL) {
       broadcast(msg);
    }
+
+   if (msg.destination == ID_ or msg.destination == ALL) {
+      handle(msg);
+   }
+}
+
+// todo: focus on this
+void Node::initialzie_meeting() {}
+
+void Node::get_resource() {
+   assert(resource_count_ == 0);
+   LOG("I need resource. Please propagate this to everyone!");
+   new_message(ALL, Words::RESOURCE_REQUEST);
+}
+
+void Node::handle(Message msg) {
+   if (msg.word == Words::NONE) {
+
+      // hey, u got some resource?
+   } else if (msg.word == Words::RESOURCE_REQUEST and resource_count_ > 0){
+      LOG("Handling resource request");
+
+      if (resource_state_ == ResourceState::LOCKED) {
+         //todo: push to a queue of awaiting requests.
+      } else if (resource_state_ == ResourceState::IDLE){
+         resource_state_ = ResourceState::LOCKED;
+         new_message(msg.sender, Words::RESOURCE_ANSWER);
+
+         LOG("Send a response");
+      }
+
+      // hey, i got some resource, u want?
+   } else if (msg.word == Words::RESOURCE_ANSWER){
+      LOG("Recieved a response");
+      if (resource_state_ == ResourceState::IDLE) {
+         resource_state_ = ResourceState::WAITING;
+         new_message(msg.sender, Words::RESOURCE_ACK);
+         LOG("Accepted a resource of %d", msg.sender);
+      } else {
+         new_message(msg.sender, Words::RESOURCE_DEN);
+         LOG("Denied a resource of %d", msg.sender);
+      }
+
+      // hey, i want ur resource. pls send
+   } else if (msg.word == Words::RESOURCE_ACK) {
+      resource_count_ -= 1;
+      new_message(msg.sender, Words::RESOURCE_SENT);
+      LOG("Someone wanted my resource. Sent");
+
+      // hey i dont want ur resource after all
+   } else if (msg.word == Words::RESOURCE_DEN) {
+      // todo: next in line
+      resource_state_ = ResourceState::IDLE;
+      LOG("Someone didn't want my resource.");
+
+      // hey, here's the resource
+   } else if (msg.word == Words::RESOURCE_SENT){
+      resource_count_ += 1;
+      meet();
+   }
+}
+
+void Node::meet() {
+   LOG("MEETING");
+   resource_state_ = ResourceState::IDLE;
 }
 
 bool Node::accept(Message &msg) {
@@ -95,15 +181,16 @@ pair<int, int *> Node::serialize() {
    int n_children   = (int) children_.size();
    int n_neighbours = (int) neighbours_.size();
 
-   int n_items = 3 + 2 + n_children + n_neighbours;
+   int n_items = 4 + 2 + n_children + n_neighbours;
    int* buffer = new int[n_items];
 
    buffer[0]  = ID_;
    buffer[1]  = level_;
    buffer[2]  = parent_;
-   buffer[3]  = n_children;
-   buffer[4]  = n_neighbours;
-   int offset = 5;
+   buffer[3]  = resource_count_;
+   buffer[4]  = n_children;
+   buffer[5]  = n_neighbours;
+   int offset = 6;
 
    for (auto item : children_)
       buffer[offset++] = item;
@@ -118,9 +205,10 @@ void Node::deserialize(int* buffer) {
    ID_               = buffer[0];
    level_            = buffer[1];
    parent_           = buffer[2];
-   int n_children    = buffer[3];
-   int n_neighbours  = buffer[4];
-   int offset        = 5;
+   resource_count_   = buffer[3];
+   int n_children    = buffer[4];
+   int n_neighbours  = buffer[5];
+   int offset        = 6;
 
    children_.clear();
    neighbours_.clear();
