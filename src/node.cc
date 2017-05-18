@@ -89,7 +89,9 @@ void Node::consume(Message &msg) {
 }
 
 // todo: focus on this
-void Node::initialzie_meeting() {}
+void Node::initialzie_meeting() {
+   LOG("Witam");
+}
 
 void Node::get_resource() {
    assert(resource_count_ == 0);
