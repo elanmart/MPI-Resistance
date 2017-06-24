@@ -26,16 +26,14 @@ void Node::set_manager(Manager *m) {
 
 // --- comms ---
 
-// todo refactor all new_message methods to a single method?
-Message Node::new_message(int destination, Words w) {
-   auto msg = create_message(msg_number_++, ID_, destination, w);
-   msg_cache_.insert(identifier(msg));
-   broadcast(msg);
-   return msg;
-}
 
 Message Node::new_message(int destination, Words w, int *payload) {
-   auto msg = create_message(msg_number_++, ID_, destination, w, payload);
+   _Message msg;
+   if (payload == nullptr) {
+      msg = create_message(msg_number_++, ID_, destination, w);
+   } else {
+      msg = create_message(msg_number_++, ID_, destination, w, payload);
+   }
    msg_cache_.insert(identifier(msg));
    broadcast(msg);
    return msg;
@@ -94,7 +92,7 @@ void Node::initialzie_meeting() {}
 void Node::get_resource() {
    assert(resource_count_ == 0);
    LOG("I need resource. Please propagate this to everyone!");
-   new_message(ALL, Words::RESOURCE_REQUEST);
+   new_message(ALL, Words::RESOURCE_REQUEST, nullptr);
 }
 
 void Node::handle(Message msg) {
@@ -108,7 +106,7 @@ void Node::handle(Message msg) {
          //todo: push to a queue of awaiting requests.
       } else if (resource_state_ == ResourceState::IDLE){
          resource_state_ = ResourceState::LOCKED;
-         new_message(msg.sender, Words::RESOURCE_ANSWER);
+         new_message(msg.sender, Words::RESOURCE_ANSWER, nullptr);
 
          LOG("Send a response");
       }
@@ -118,17 +116,17 @@ void Node::handle(Message msg) {
       LOG("Recieved a response");
       if (resource_state_ == ResourceState::IDLE) {
          resource_state_ = ResourceState::WAITING;
-         new_message(msg.sender, Words::RESOURCE_ACK);
+         new_message(msg.sender, Words::RESOURCE_ACK, nullptr);
          LOG("Accepted a resource of %d", msg.sender);
       } else {
-         new_message(msg.sender, Words::RESOURCE_DEN);
+         new_message(msg.sender, Words::RESOURCE_DEN, nullptr);
          LOG("Denied a resource of %d", msg.sender);
       }
 
       // hey, i want ur resource. pls send
    } else if (msg.word == Words::RESOURCE_ACK) {
       resource_count_ -= 1;
-      new_message(msg.sender, Words::RESOURCE_SENT);
+      new_message(msg.sender, Words::RESOURCE_SENT, nullptr);
       LOG("Someone wanted my resource. Sent");
 
       // hey i dont want ur resource after all

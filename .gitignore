@@ -155,3 +155,4 @@ fabric.properties
 
 build/
 .idea/
+cmake-build-debug/PR.cbp
