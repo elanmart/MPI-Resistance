@@ -40,7 +40,6 @@ public:
    void consume(Message &msg);
    void send_to(Message msg, set<int> recipients);
    void send_to(Message msg, int dest);
-   Message new_message(int destination, Words w);
    Message new_message(int destination, Words w, int payload[]);
 
    // message bookkeeping
