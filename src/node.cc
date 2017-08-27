@@ -40,8 +40,6 @@ void Node::_send(Message msg) {
 }
 
 // --- logic ---
-
-// todo: focus on this
 void Node::start_event_loop() {
    Message msg;
 
@@ -53,25 +51,16 @@ void Node::start_event_loop() {
    while (not STOP_) {
       manager_->communicate();
 
-      if (manager_->get(&msg))
+      if (this->get(&msg))
          consume(msg);
 
       if (ID_ == 12 and send == 1) {
          send = 0;
          get_resource();
       }
-
-      if (0) {
-         pass_acceptor();
-      }
-
-      if (0) {
-         // clear_message_buffer(); (look at timestamps at throw away the oldest);
-      }
    }
 }
 
-// todo: focus on this
 void Node::consume(Message &msg) {
    if (not accept(msg))
       return;
@@ -86,7 +75,6 @@ void Node::consume(Message &msg) {
    }
 }
 
-// todo: focus on this
 void Node::initialzie_meeting() {
    LOG("Witam");
 
@@ -210,7 +198,6 @@ void Node::broadcast(Message msg) {
 }
 
 // --- serialze ---
-
 pair<int, int *> Node::serialize() {
    int n_children   = (int) children_.size();
    int n_neighbours = (int) neighbours_.size();
@@ -253,4 +240,8 @@ void Node::deserialize(int* buffer) {
    offset += n_children;
    for (int i=offset; i<offset+n_neighbours; i++)
       neighbours_.insert(buffer[i]);
+}
+
+bool Node::get(Message *msg) {
+   return false;
 }
