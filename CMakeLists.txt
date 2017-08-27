@@ -13,9 +13,9 @@ set(SOURCE_FILES
         src/config.h
         src/config.cc
         src/common.h
-        src/comm.cpp
+        src/comm.cc
         src/comm.h
-        src/message.cpp
+        src/message.cc
         src/message.h)
 
 add_executable(PR ${SOURCE_FILES})

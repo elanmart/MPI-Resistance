@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+#define PAYLOAD_SIZE 8
+
 enum Words {
    // resource acquisition
    RESOURCE_REQUEST,
@@ -41,15 +43,13 @@ typedef struct _Message {
    int  destination;
    Words word;
 
-   int payload[8];
+   int payload[PAYLOAD_SIZE];
 } Message;
 
+Message create_message(int msg_number, int sender, int destination,
+                       Words word = Words::NONE, int payload[] = nullptr);
+
 int64_t identifier(Message &m);
-
-Message create_message(int msg_number, int sender, int destination);
-Message create_message(int msg_number, int sender, int destination, Words w);
-Message create_message(int msg_number, int sender, int destination, Words w, int payload[]);
-
 Message detach(Message other);
 
 

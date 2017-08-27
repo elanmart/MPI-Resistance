@@ -6,8 +6,8 @@
 
 class Manager; // todo: handle this;
 
-enum ResourceState { IDLE, WAITING, LOCKED};
-enum MeetingState {  IDLE, WAITING, LOCKED, MASTER_ORG, SLAVE_ORG};
+enum class ResourceState { IDLE, WAITING, LOCKED};
+enum class MeetingState  { IDLE, WAITING, LOCKED, MASTER_ORG, SLAVE_ORG};
 
 class Node {
 public:

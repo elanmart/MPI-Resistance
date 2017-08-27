@@ -26,14 +26,13 @@ void Node::set_manager(Manager *m) {
 }
 
 // --- comms ---
-
 void Node::new_message(int destination, Words w) {
-   _send(create_message(msg_number_++, ID_, destination, w));
+   msg_number_++;
+   auto msg = create_message(msg_number_, ID_, destination, w);
+
+   _send(msg);
 }
 
-void Node::new_message(int destination, Words w, int *payload) {
-   _send(create_message(msg_number_++, ID_, destination, w, payload));
-}
 
 void Node::_send(Message msg) {
    msg_cache_.insert(identifier(msg));

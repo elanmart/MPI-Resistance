@@ -8,6 +8,7 @@ vector<Node> create_tree(Config &cfg) {
       nodes[i].ID_ = i;
    }
 
+   int n   = cfg.tree_size;
    int cnt = 1;
    int idx = 0;
    int n_children;

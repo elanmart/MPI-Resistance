@@ -3,16 +3,13 @@
 
 #include "common.h"
 
-int randint(int low, int high);
-
 
 template <typename T>
 bool inline contains(set<T> collection, T item) {
    return collection.find(item) != collection.end();
 }
 
-
-int randint(int low, int high) {
+inline int randint(int low, int high) {
    assert(low <= high);
 
    random_device rd;
