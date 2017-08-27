@@ -15,6 +15,13 @@ class Node;
 
 class Manager {
 
+// threading
+unique_ptr<mutex> _incoming_queue_mutex = nullptr;
+unique_ptr<mutex> _outgoing_queue_mutex = nullptr;
+
+unique_ptr<thread> _sender_thread = nullptr;
+unique_ptr<thread> _reciever_thread = nullptr;
+
 public:
    // ctors
    Manager(Config cfg);
@@ -41,13 +48,6 @@ private:
    // mpi-ctors
    void mpi_init();
    void mpi_exit();
-
-   // threading
-   mutex _incoming_queue_mutex;
-   mutex _outgoing_queue_mutex;
-
-   unique_ptr<thread> _sender_thread;
-   unique_ptr<thread> _reciever_thread;
 
    void start_sender();
    void start_reciever();

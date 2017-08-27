@@ -61,10 +61,9 @@ vector<Node> create_tree(Config &cfg) {
 
 int main (int argc, char* argv[])
 {
-   auto cfg     = Config(argc, argv);
-   auto manager = Manager(cfg);
-   Node local;
-
+   Config  cfg(argc, argv);
+   Manager manager(cfg);
+   Node    local;
 
    if (manager.is_root()) {
       cfg.tree_size = manager.size_;

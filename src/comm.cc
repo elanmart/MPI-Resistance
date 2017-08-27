@@ -7,6 +7,10 @@ Manager::Manager(Config cfg) {
 
    cfg_         = cfg;
    MSG_Dataype_ = get_mpi_message_dtype(cfg_);
+
+   _incoming_queue_mutex = unique_ptr<mutex>(new mutex());
+   _outgoing_queue_mutex = unique_ptr<mutex>(new mutex());
+
    STOP_        = false;
 }
 
@@ -48,7 +52,7 @@ Node Manager::recv_node(int src) {
 // --- queues ---
 
 bool Manager::get(Message *msg) {
-   std::lock_guard<std::mutex> guard(_incoming_queue_mutex);
+   std::lock_guard<std::mutex> guard(*_incoming_queue_mutex);
 
    if (not incoming.empty()) {
       (*msg) = incoming.front();
@@ -61,7 +65,7 @@ bool Manager::get(Message *msg) {
 }
 
 void Manager::put(Message msg, int dest) {
-   std::lock_guard<std::mutex> guard(_outgoing_queue_mutex);
+   std::lock_guard<std::mutex> guard(*_outgoing_queue_mutex);
 
    if (msg.__from__ != dest and dest >= 0) {
       msg.__to__ = dest;
@@ -86,7 +90,7 @@ void Manager::_sender_loop() {
 }
 
 void Manager::_send_msg() {
-   std::lock_guard<std::mutex> guard(_outgoing_queue_mutex);
+   std::lock_guard<std::mutex> guard(*_outgoing_queue_mutex);
 
    if (not outgoing.empty()){
       Message msg = outgoing.front();
@@ -114,7 +118,7 @@ void Manager::_recv_msg() {
 
       msg.__from__ = src;
 
-      std::lock_guard<std::mutex> guard(_incoming_queue_mutex);
+      std::lock_guard<std::mutex> guard(*_incoming_queue_mutex);
       incoming.push(msg);
    }
 }
