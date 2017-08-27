@@ -12,11 +12,6 @@ enum class MeetingState  { IDLE, WAITING, LOCKED, MASTER_ORG, SLAVE_ORG};
 
 class Node {
 public:
-   // EXPERIMENTAL -----------------------------
-   std::mutex message_queue_mutex;
-
-   // END-EXPERIMENTAL -------------------------
-
    // ctors
    Node();
    Node(int ID);
@@ -55,7 +50,6 @@ public:
    void _send(Message msg);
 
    bool get(Message *msg);
-   void put(Message msg, int dest);
 
    void broadcast(Message msg);
    bool accept(Message &msg);

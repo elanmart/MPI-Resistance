@@ -43,6 +43,8 @@ Node Manager::recv_node(int src) {
 // --- queues ---
 
 bool Manager::get(Message *msg) {
+   std::lock_guard<std::mutex> guard(incoming_queue_mutex);
+
    if (not incoming.empty()) {
       (*msg) = incoming.front();
       incoming.pop();
@@ -54,6 +56,8 @@ bool Manager::get(Message *msg) {
 }
 
 void Manager::put(Message msg, int dest) {
+   std::lock_guard<std::mutex> guard(outgoing_queue_mutex);
+
    if (msg.__from__ != dest and dest >= 0) {
       msg.__to__ = dest;
       outgoing.push(msg);

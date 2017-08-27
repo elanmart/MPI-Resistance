@@ -40,17 +40,8 @@ void Node::_send(Message msg) {
 }
 
 bool Node::get(Message *msg) {
-   std::lock_guard<std::mutex> guard(message_queue_mutex);
-
-   return false;
+   return manager_->get(msg);
 }
-
-void Node::put(Message msg, int dest) {
-   std::lock_guard<std::mutex> guard(message_queue_mutex);
-
-   manager_->put(msg, dest);
-}
-
 
 // --- logic ---
 void Node::start_event_loop() {
@@ -196,12 +187,12 @@ bool Node::accept(Message &msg) {
 }
 
 void Node::send_to(Message msg, int dest) {
-   put(msg, dest);  // todo: this should be refactored, but I'm not comfortable with calling put directly yet.
+   manager_->put(msg, dest);
 }
 
 void Node::send_to(Message msg, set<int> recipients) {
    for (auto id : recipients)
-      put(msg, id);
+      send_to(msg, id);
 }
 
 void Node::broadcast(Message msg) {

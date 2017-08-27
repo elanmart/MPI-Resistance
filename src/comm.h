@@ -21,6 +21,10 @@ public:
    Manager(Config cfg);
    ~Manager();
 
+   // threading
+   std::mutex incoming_queue_mutex;
+   std::mutex outgoing_queue_mutex;
+
    // mpi-ctors
    void mpi_init();
    void mpi_exit();
