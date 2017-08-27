@@ -18,8 +18,8 @@ public:
 
    int n_resources;
 
-   float acceptor_proba; // todo: add this to parser
-   float resource_proba; // todo: add this to parser
+   float acceptor_proba;
+   float resource_proba;
 
    void parse_args(int argc, char** argv);
    void help();

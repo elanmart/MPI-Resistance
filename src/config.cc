@@ -38,14 +38,22 @@ void Config::parse_args(int argc, char** argv) {
       } else if (arg_match(idx, "--n-resources")) {
          n_resources = atoi(argv[idx + 1]);
       }
+      else if (arg_match(idx, "--acceptor-proba")) {
+         acceptor_proba = (float) atof(argv[idx + 1]);
+      }
+      else if (arg_match(idx, "--resource-proba")) {
+         resource_proba = (float) atof(argv[idx + 1]);
+      }
    }
 }
 
 void Config::help() {
    cerr    << "\n Available options:\n"
            << "  --max-children     maximum number of children_ per node  [" << max_children   << "]\n"
-           << "  --max-neighbours   maximum number of neihbours per node [" << max_neighbours << "]\n"
-           << "  --avg-neighbours   average number of neihbours per node [" << avg_neighbours << "]\n"
+           << "  --max-neighbours   maximum number of neihbours per node  [" << max_neighbours << "]\n"
+           << "  --avg-neighbours   average number of neihbours per node  [" << avg_neighbours << "]\n"
+           << "  --acceptor-proba   probability of getting acceptor badge [" << acceptor_proba << "]\n"
+           << "  --resource-proba   probability of getting a resource     [" << resource_proba << "]\n"
            << endl;
 }
 
