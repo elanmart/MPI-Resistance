@@ -10,6 +10,8 @@ public:
    Config();
    Config(int argc, char** argv);
 
+   int tree_size;
+
    int max_children;
    int max_neighbours;
    int avg_neighbours;

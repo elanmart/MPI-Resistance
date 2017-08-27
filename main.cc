@@ -2,8 +2,8 @@
 #include "src/utils.h"
 
 
-vector<Node> create_tree(int n, Config &cfg) {
-   auto nodes = vector<Node>((uint) n);
+vector<Node> create_tree(Config &cfg) {
+   auto nodes = vector<Node>((uint) cfg.tree_size);
    for (int i = 0; i < nodes.size(); ++i) {
       nodes[i].ID_ = i;
    }
@@ -66,7 +66,9 @@ int main (int argc, char* argv[])
 
 
    if (manager.is_root()) {
-      auto tree = create_tree(manager.size_, cfg);
+      cfg.tree_size = manager.size_;
+
+      auto tree = create_tree(cfg);
       local     = tree[0];
 
       for (int i = 1; i < manager.size_; ++i) {
