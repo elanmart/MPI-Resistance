@@ -62,7 +62,7 @@ int main (int argc, char* argv[])
 {
    auto cfg     = Config(argc, argv);
    auto manager = Manager(cfg);
-   Node    local;
+   Node local;
 
 
    if (manager.is_root()) {

@@ -9,6 +9,7 @@ Node::Node() {
    msg_number_     = 0;
    resource_count_ = 0;
    resource_state_ = ResourceState::IDLE;
+   meeting_state_  = MeetingState::IDLE;
    STOP_           = false;
 }
 
@@ -26,19 +27,17 @@ void Node::set_manager(Manager *m) {
 
 // --- comms ---
 
-// todo refactor all new_message methods to a single method?
-Message Node::new_message(int destination, Words w) {
-   auto msg = create_message(msg_number_++, ID_, destination, w);
-   msg_cache_.insert(identifier(msg));
-   broadcast(msg);
-   return msg;
+void Node::new_message(int destination, Words w) {
+   _send(create_message(msg_number_++, ID_, destination, w));
 }
 
-Message Node::new_message(int destination, Words w, int *payload) {
-   auto msg = create_message(msg_number_++, ID_, destination, w, payload);
+void Node::new_message(int destination, Words w, int *payload) {
+   _send(create_message(msg_number_++, ID_, destination, w, payload));
+}
+
+void Node::_send(Message msg) {
    msg_cache_.insert(identifier(msg));
    broadcast(msg);
-   return msg;
 }
 
 // --- logic ---
@@ -91,6 +90,8 @@ void Node::consume(Message &msg) {
 // todo: focus on this
 void Node::initialzie_meeting() {
    LOG("Witam");
+
+
 }
 
 void Node::get_resource() {
@@ -99,8 +100,40 @@ void Node::get_resource() {
    new_message(ALL, Words::RESOURCE_REQUEST);
 }
 
+// todo: WIP
 void Node::handle(Message msg) {
    if (msg.word == Words::NONE) {
+
+      //todo: working on participants acquisition here
+
+   } else if (msg.word == Words::MEETING_ACCEPT) {
+      participants_.insert(msg.sender);
+      awaiting_response_ -= 1;
+
+
+   } else if (msg.word == Words::MEETING_DECLINE) {
+      awaiting_response_ -= 1;
+
+   } else if (msg.word == Words::MEETING_JOIN) {
+      if (time_penalty_ > 0)
+         new_message(msg.sender, Words::MEETING_DECLINE);
+
+      if (meeting_state_ == MeetingState::IDLE) {
+         new_message(msg.sender, Words::MEETING_ACCEPT);
+         meeting_state_ = MeetingState::WAITING;
+      }
+
+      if (meeting_state_ == MeetingState::MASTER_ORG){
+         meeting_state_ = MeetingState::SLAVE_ORG;
+
+      }
+
+   } else if (msg.word == Words::MEETING_CANCEL) {
+   } else if (msg.word == Words::MEETING_NEW_ORG) {
+   } else if (msg.word == Words::MEETING_NEW_ORG_PROBE) {
+   } else if (msg.word == Words::MEETING_PARTC_ACK) {
+
+      // -------------------------------------------------------------
 
       // hey, u got some resource?
    } else if (msg.word == Words::RESOURCE_REQUEST and resource_count_ > 0){

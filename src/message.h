@@ -5,27 +5,30 @@
 
 enum Words {
    // resource acquisition
-   RESOURCE_REQUEST = 0,
-   RESOURCE_ANSWER  = 1,
-   RESOURCE_ACK     = 2,
-   RESOURCE_SENT    = 3,
-   RESOURCE_DEN     = 15,
+   RESOURCE_REQUEST,
+   RESOURCE_ANSWER,
+   RESOURCE_ACK,
+   RESOURCE_SENT,
+   RESOURCE_DEN,
 
    // acceptance acquisition
-   MEETING_REQUEST  = 4,
-   MEETING_FINISHED = 5,
-   REQUEST_ACK      = 6,
-   REQUEST_ALLOW    = 7,
+   MEETING_REQUEST,
+   MEETING_FINISHED,
+   REQUEST_ACK,
+   REQUEST_ALLOW,
 
    // organizing a meeting
-   JOIN          = 8,
-   CANCEL        = 9,
-   DECLINE       = 10,
-   ACCEPT        = 11,
-   NEW_ORG_PROBE = 12,
-   NEW_ORG       = 13,
+   MEETING_JOIN,
+   MEETING_ACCEPT,
+   MEETING_DECLINE,
+   MEETING_CANCEL,
+   MEETING_ORG_ACCEPT,
+   MEETING_NEW_ORG_PROBE,
+   MEETING_NEW_ORG,
+   MEETING_PARTC_ACK,
+   MEETING_MERGE,
 
-   NONE = 14
+   NONE
 };
 
 typedef struct _Message {

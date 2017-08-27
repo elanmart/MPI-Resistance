@@ -7,6 +7,7 @@
 class Manager; // todo: handle this;
 
 enum ResourceState { IDLE, WAITING, LOCKED};
+enum MeetingState {  IDLE, WAITING, LOCKED, MASTER_ORG, SLAVE_ORG};
 
 class Node {
 public:
@@ -14,15 +15,24 @@ public:
    Node();
    Node(int ID);
    Node(int* buffer);
+
+   // communication interface
+   Manager* manager_ = nullptr;
    void set_manager(Manager *m);
 
    // identity
    int32_t  ID_;
    int32_t  level_;
-   Manager* manager_ = nullptr;
 
    // tasks
    int resource_count_;
+   set<int> participants_;
+   int awaiting_response_;
+   set<int> perhaps_merge_orgs_;
+   MeetingState meeting_state_;
+   ResourceState resource_state_;
+   int time_penalty_;
+
 
    // topology
    int32_t      parent_;
@@ -40,8 +50,8 @@ public:
    void consume(Message &msg);
    void send_to(Message msg, set<int> recipients);
    void send_to(Message msg, int dest);
-   Message new_message(int destination, Words w);
-   Message new_message(int destination, Words w, int payload[]);
+   void new_message(int destination, Words w);
+   void new_message(int destination, Words w, int payload[]);
 
    // message bookkeeping
    set<int64_t> msg_cache_; // todo: replace set with a map;
@@ -54,12 +64,12 @@ public:
    void handle(Message msg);
    void get_accepatnce();
 
-   ResourceState resource_state_;
-
    // synchronization
    bool STOP_;
 
    void meet();
+
+   void _send(Message msg);
 };
 
 #define DASH "=====================================\n"
