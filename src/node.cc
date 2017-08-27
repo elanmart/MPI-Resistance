@@ -46,22 +46,13 @@ bool Node::get(Message *msg) {
 // --- logic ---
 void Node::start_event_loop() {
    Message msg;
+   manager_->start();
 
-   if (resource_count_ > 0) {
-      LOG("I have resources: %d", resource_count_);
-   }
-
-   int send = 1;
    while (not STOP_) {
-      manager_->communicate();
 
       if (this->get(&msg))
          consume(msg);
 
-      if (ID_ == 12 and send == 1) {
-         send = 0;
-         get_resource();
-      }
    }
 }
 

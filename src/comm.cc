@@ -1,3 +1,4 @@
+#include <thread>
 #include "comm.h"
 #include "utils.h"
 
@@ -8,6 +9,7 @@ Manager::Manager(Config cfg) {
 
    cfg_         = cfg;
    MSG_Dataype_ = get_mpi_message_dtype(cfg_);
+   STOP_        = false;
 }
 
 Manager::~Manager() {
@@ -22,6 +24,11 @@ void Manager::mpi_init() {
 
 void Manager::mpi_exit() {
    MPI_Finalize();
+}
+
+void Manager::start() {
+   this->start_sender();
+   this->start_reciever();
 }
 
 // --- setup ---
@@ -43,7 +50,7 @@ Node Manager::recv_node(int src) {
 // --- queues ---
 
 bool Manager::get(Message *msg) {
-   std::lock_guard<std::mutex> guard(incoming_queue_mutex);
+   std::lock_guard<std::mutex> guard(_incoming_queue_mutex);
 
    if (not incoming.empty()) {
       (*msg) = incoming.front();
@@ -56,7 +63,7 @@ bool Manager::get(Message *msg) {
 }
 
 void Manager::put(Message msg, int dest) {
-   std::lock_guard<std::mutex> guard(outgoing_queue_mutex);
+   std::lock_guard<std::mutex> guard(_outgoing_queue_mutex);
 
    if (msg.__from__ != dest and dest >= 0) {
       msg.__to__ = dest;
@@ -65,13 +72,24 @@ void Manager::put(Message msg, int dest) {
 }
 
 // --- comms ---
-
-void Manager::communicate() {
-   send_msg();
-   recv_msg();
+void Manager::start_sender() {
+   _sender_thread = std::thread(&Manager::_sender_loop, this);
 }
 
-void Manager::send_msg() {
+void Manager::start_reciever() {
+   _reciever_thread = std::thread(&Manager::_reciever_loop, this);
+}
+
+void Manager::_sender_loop() {
+   while (not STOP_) {
+      _send_msg();
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+   }
+}
+
+void Manager::_send_msg() {
+   std::lock_guard<std::mutex> guard(_outgoing_queue_mutex);
+
    if (not outgoing.empty()){
       Message msg = outgoing.front();
       MPI_Send(&msg, 1, MSG_Dataype_, msg.__to__, NOTAG, MPI_COMM_WORLD);
@@ -80,7 +98,13 @@ void Manager::send_msg() {
    }
 }
 
-void Manager::recv_msg() {
+void Manager::_reciever_loop() {
+   while (not STOP_) {
+      _recv_msg();
+   }
+}
+
+void Manager::_recv_msg() {
    int flag;
    MPI_Status status;
    MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
@@ -91,6 +115,8 @@ void Manager::recv_msg() {
       MPI_Recv(&msg, 1, MSG_Dataype_, src, MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
 
       msg.__from__ = src;
+
+      std::lock_guard<std::mutex> guard(_incoming_queue_mutex);
       incoming.push(msg);
    }
 }

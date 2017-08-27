@@ -6,8 +6,6 @@
 #include "message.h"
 #include "node.h"
 
-//TODO: dynamic buffer?
-//TODO: ROOT --> ?
 #define BUFFER_SIZE 4096
 #define ROOT   0
 #define NOTAG  0
@@ -16,33 +14,51 @@
 class Node;
 
 class Manager {
+
 public:
    // ctors
    Manager(Config cfg);
    ~Manager();
-
-   // threading
-   std::mutex incoming_queue_mutex;
-   std::mutex outgoing_queue_mutex;
-
-   // mpi-ctors
-   void mpi_init();
-   void mpi_exit();
+   void start();
 
    // mpi-state
    int size_;
    int rank_;
 
-   // communication
-   void send_node(Node& n, int dest);
-   Node recv_node(int src);
-   void communicate();
-   void send_msg();
-   void recv_msg();
-
    // queues
    bool get(Message *msg);
    void put(Message msg, int dest);
+
+   // communication
+   void send_node(Node& n, int dest);
+   Node recv_node(int src);
+
+   // utils
+   bool is_root();
+   int  root();
+
+private:
+   // mpi-ctors
+   void mpi_init();
+   void mpi_exit();
+
+   // threading
+   std::mutex _incoming_queue_mutex;
+   std::mutex _outgoing_queue_mutex;
+
+   std::thread _sender_thread;
+   std::thread _reciever_thread;
+
+   void start_sender();
+   void start_reciever();
+
+   void _sender_loop();
+   void _reciever_loop();
+
+   void _send_msg();
+   void _recv_msg();
+
+   // queues
    queue<Message> incoming;
    queue<Message> outgoing;
 
@@ -50,9 +66,8 @@ public:
    Config       cfg_;
    MPI_Datatype MSG_Dataype_;
 
-   // utils
-   bool is_root();
-   int  root();
+   // SYNC
+   bool STOP_;
 };
 
 MPI_Datatype get_mpi_message_dtype(Config &cfg);
