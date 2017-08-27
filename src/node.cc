@@ -17,7 +17,7 @@ Node::Node(int ID) : Node() {
    ID_ = ID;
 }
 
-Node::Node(int *buffer) {
+Node::Node(int *buffer) : Node() {
    deserialize(buffer);
 }
 
