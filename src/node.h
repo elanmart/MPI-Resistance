@@ -18,7 +18,6 @@ public:
    // std::lock_guard<std::mutex> guard(g_pages_mutex);
    // END-EXPERIMENTAL -------------------------
 
-
    // ctors
    Node();
    Node(int ID);
@@ -52,24 +51,30 @@ public:
 
    // generic communication
    void start_event_loop();
+
+   void new_message(int destination, Words w, int payload[] = nullptr);
+   void _send(Message msg);
+
+   bool get(Message *msg);
+   bool put(Message *msg);
+
    void broadcast(Message msg);
    bool accept(Message &msg);
    void consume(Message &msg);
+
    void send_to(Message msg, set<int> recipients);
    void send_to(Message msg, int dest);
-   void new_message(int destination, Words w, int payload[] = nullptr);
-   void _send(Message msg);
 
    // message bookkeeping
    set<int64_t> msg_cache_; // todo: replace set with a map;
    int msg_number_;
 
    // special skills
-   void pass_acceptor();
-   void initialzie_meeting();
+//   void pass_acceptor();
+//   void initialzie_meeting();
    void get_resource();
    void handle(Message msg);
-   void get_accepatnce();
+//   void get_accepatnce();
    void meet();
 
    // synchronization
