@@ -53,7 +53,7 @@ bool Manager::get(Message *msg) {
    return false;
 }
 
-void Manager::push(Message msg, int dest) {
+void Manager::put(Message msg, int dest) {
    if (msg.__from__ != dest and dest >= 0) {
       msg.__to__ = dest;
       outgoing.push(msg);

@@ -38,7 +38,7 @@ public:
 
    // queues
    bool get(Message *msg);
-   void push(Message msg, int dest);
+   void put(Message msg, int dest);
    queue<Message> incoming;
    queue<Message> outgoing;
 

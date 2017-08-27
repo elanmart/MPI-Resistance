@@ -15,7 +15,6 @@ public:
    // EXPERIMENTAL -----------------------------
    std::mutex message_queue_mutex;
 
-   // std::lock_guard<std::mutex> guard(g_pages_mutex);
    // END-EXPERIMENTAL -------------------------
 
    // ctors
@@ -56,7 +55,7 @@ public:
    void _send(Message msg);
 
    bool get(Message *msg);
-   bool put(Message *msg);
+   void put(Message msg, int dest);
 
    void broadcast(Message msg);
    bool accept(Message &msg);

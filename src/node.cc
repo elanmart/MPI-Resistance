@@ -39,6 +39,19 @@ void Node::_send(Message msg) {
    broadcast(msg);
 }
 
+bool Node::get(Message *msg) {
+   std::lock_guard<std::mutex> guard(message_queue_mutex);
+
+   return false;
+}
+
+void Node::put(Message msg, int dest) {
+   std::lock_guard<std::mutex> guard(message_queue_mutex);
+
+   manager_->put(msg, dest);
+}
+
+
 // --- logic ---
 void Node::start_event_loop() {
    Message msg;
@@ -127,7 +140,7 @@ void Node::handle(Message msg) {
       LOG("Handling resource request");
 
       if (resource_state_ == ResourceState::LOCKED) {
-         //todo: push to a queue of awaiting requests.
+         //todo: put to a queue of awaiting requests.
       } else if (resource_state_ == ResourceState::IDLE){
          resource_state_ = ResourceState::LOCKED;
          new_message(msg.sender, Words::RESOURCE_ANSWER);
@@ -183,12 +196,12 @@ bool Node::accept(Message &msg) {
 }
 
 void Node::send_to(Message msg, int dest) {
-   manager_->push(msg, dest);
+   put(msg, dest);  // todo: this should be refactored, but I'm not comfortable with calling put directly yet.
 }
 
 void Node::send_to(Message msg, set<int> recipients) {
    for (auto id : recipients)
-      send_to(msg, id);
+      put(msg, id);
 }
 
 void Node::broadcast(Message msg) {
@@ -240,8 +253,4 @@ void Node::deserialize(int* buffer) {
    offset += n_children;
    for (int i=offset; i<offset+n_neighbours; i++)
       neighbours_.insert(buffer[i]);
-}
-
-bool Node::get(Message *msg) {
-   return false;
 }
