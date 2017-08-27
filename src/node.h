@@ -41,13 +41,13 @@ public:
    void set_manager(Manager *m);
 
    // tasks
-   int resource_count_;
-   set<int> participants_;
-   int awaiting_response_;
-   set<int> perhaps_merge_orgs_;
-   MeetingState meeting_state_;
+   int           resource_count_;
+   int           awaiting_response_;
+   int           time_penalty_;
+   set<int>      participants_;
+   set<int>      perhaps_merge_orgs_;
+   MeetingState  meeting_state_;
    ResourceState resource_state_;
-   int time_penalty_;
 
    // generic communication
    void start_event_loop();
