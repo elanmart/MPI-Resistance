@@ -1,6 +1,4 @@
-#include <thread>
 #include "comm.h"
-#include "utils.h"
 
 // --- ctors ---
 
@@ -73,11 +71,11 @@ void Manager::put(Message msg, int dest) {
 
 // --- comms ---
 void Manager::start_sender() {
-   _sender_thread = std::thread(&Manager::_sender_loop, this);
+   _sender_thread = unique_ptr<thread>(new thread(&Manager::_sender_loop, this));
 }
 
 void Manager::start_reciever() {
-   _reciever_thread = std::thread(&Manager::_reciever_loop, this);
+   _reciever_thread = unique_ptr<thread>(new thread(&Manager::_reciever_loop, this));
 }
 
 void Manager::_sender_loop() {

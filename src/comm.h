@@ -43,11 +43,11 @@ private:
    void mpi_exit();
 
    // threading
-   std::mutex _incoming_queue_mutex;
-   std::mutex _outgoing_queue_mutex;
+   mutex _incoming_queue_mutex;
+   mutex _outgoing_queue_mutex;
 
-   std::thread _sender_thread;
-   std::thread _reciever_thread;
+   unique_ptr<thread> _sender_thread;
+   unique_ptr<thread> _reciever_thread;
 
    void start_sender();
    void start_reciever();
