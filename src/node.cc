@@ -26,9 +26,9 @@ void Node::set_manager(Manager *m) {
 }
 
 // --- comms ---
-void Node::new_message(int destination, Words w) {
+void Node::new_message(int destination, Words w, int payload[] = nullptr) {
    msg_number_++;
-   auto msg = create_message(msg_number_, ID_, destination, w);
+   auto msg = create_message(msg_number_, ID_, destination, w, payload);
 
    _send(msg);
 }
