@@ -9,7 +9,6 @@ set(SOURCE_FILES
         main.cc
         src/node.cc
         src/node.h
-        src/utils.cc
         src/utils.h
         src/config.h
         src/config.cc

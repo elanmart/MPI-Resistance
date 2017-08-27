@@ -6,15 +6,17 @@ Config::Config() {
    max_neighbours = 3;
    avg_neighbours = 2;
    n_resources    = 2;
+   tree_size      = -1;
 }
 
 void Config::parse_args(int argc, char** argv) {
+
    auto arg_match = [argv](int32_t idx, string name) { return strcmp(argv[idx], name.c_str()) == 0; };
 
    for (int32_t idx=1; idx < argc; idx+=2) {
 
       if (argv[idx][0] != '-' or argv[idx][1] != '-') {
-         cerr << "Invalid arguments list. (Arguments should start with double dash [--arg])" << endl;
+         cerr << "Invalid arguments list. (Arguments should start with double dash [eg --arg])" << endl;
          help();
          exit(EXIT_FAILURE);
       }

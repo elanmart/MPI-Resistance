@@ -7,7 +7,7 @@ Manager::Manager(Config cfg) {
    mpi_init();
 
    cfg_         = cfg;
-   MSG_Dataype_ = mpi_message_dtype(cfg_);
+   MSG_Dataype_ = get_mpi_message_dtype(cfg_);
 }
 
 Manager::~Manager() {
@@ -101,7 +101,7 @@ int Manager::root() {
    return ROOT;
 }
 
-MPI_Datatype mpi_message_dtype(Config &cfg) {
+MPI_Datatype get_mpi_message_dtype(Config &cfg) {
    const int k = 6;
 
    int          sizes[k]   = {1, 1, 1, 1, 1, 8};

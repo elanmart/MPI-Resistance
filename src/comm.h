@@ -7,11 +7,10 @@
 #include "node.h"
 
 //TODO: dynamic buffer?
-//TODO: NOTAG --> MPI_ANY_TAG
 //TODO: ROOT --> ?
 #define BUFFER_SIZE 4096
-#define NOTAG 0
-#define ROOT  0
+#define ROOT   0
+#define NOTAG  0
 #define ALL   -1
 
 class Node;
@@ -52,6 +51,6 @@ public:
    int  root();
 };
 
-MPI_Datatype mpi_message_dtype(Config &cfg);
+MPI_Datatype get_mpi_message_dtype(Config &cfg);
 
 #endif //PR_COMM_H
