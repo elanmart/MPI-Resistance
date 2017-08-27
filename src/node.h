@@ -70,11 +70,11 @@ public:
    int msg_number_;
 
    // special skills
-//   void pass_acceptor();
-//   void initialzie_meeting();
+   void pass_acceptor();
+   void initialzie_meeting();
    void get_resource();
    void handle(Message msg);
-//   void get_accepatnce();
+   void get_accepatnce();
    void meet();
 
    // synchronization
