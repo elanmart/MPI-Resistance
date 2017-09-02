@@ -3,12 +3,17 @@
 
 #include "common.h"
 
-
+/*
+ * zwraca true jeżeli zbiór zawiera item.
+ */
 template <typename T>
 bool inline contains(set<T> collection, T item) {
    return collection.find(item) != collection.end();
 }
 
+/*
+ * Tak, w cpp potrzeba 5 LOC żeby wylosować inta.
+ */
 inline int randint(int low, int high) {
    assert(low <= high);
 

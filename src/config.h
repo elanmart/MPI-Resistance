@@ -8,20 +8,20 @@ using namespace std;
 class Config {
 public:
    Config();
-   Config(int argc, char** argv);
+   Config(int argc, char** argv); // parsuje bezpośrednio z linii poleceń
 
-   int tree_size;
+   int tree_size;        // ile nodów w drzewie
 
-   int max_children;
-   int max_neighbours;
-   int avg_neighbours;
+   int max_children;     // max liczba dzieci per node
+   int max_neighbours;   // max liczba sąsiadów per node
+   int avg_neighbours;   // średnia liczba sąsiadóœ per node (losujemy sobie ile ich ma być)
 
-   int n_resources;
+   int n_resources;      // ile risorsów w całym drzewie
 
-   float acceptor_proba;
-   float resource_proba;
+   float acceptor_proba; // jeszcze nie wiem
+   float resource_proba; // jeszcze nie wiem
 
-   void parse_args(int argc, char** argv);
+   void parse_args(int argc, char** argv); // ciekawe co to robi
    void help();
 };
 
