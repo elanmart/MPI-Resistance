@@ -33,7 +33,48 @@ Opis src:
             
 * `utils.h`  -- utilities
 
+Roadmap:
+[ ] 1. Veirfy that threaded queues work.
 
+[ ] 2. Write some kind of manual test to confirm resource acquisition works.
 
+[ ] 3. Implement simple participants gathering as described in `solution.txt`
 
+[ ] 3a.    Implement a simple manual test for it
 
+[ ] 4. Implement aquiering acceptnace as in `solution.txt`
+
+[ ] 4a.    Implement a simple manual test for it
+
+[ ] 5. Implement the whole meeting logic 
+(participants + resource + accept) in one place.
+
+[ ] 5a.    Implement a simple manual test for it
+
+[ ] 6. Implement random resource exchange 
+
+[ ] 7. Implement acceptor passing logic
+
+Notes:
+
+* Ad. 1 
+So previously we had Manager that would put and retrieve 
+elements from message queues with one thread. 
+This should be done asynchronously, though. 
+It's implemented already and compiles, but wasn't tested at runtime.
+
+* Ad. 2 This should require writing some code that would print who sends 
+resource to who, so that we can visually investigate that it works.
+
+* Ad. 3 You could take a look at how resource acquisition is done in 
+`node.cc : Node::handle(Message msg)`, starting with condition 
+`if (msg.word == Words::RESOURCE_REQUEST and resource_count_ > 0)`
+
+* Ad. 4 This is the core of the project. We can have a short discussion 
+about how to do it properly
+
+* Ad. 6 Resource should be randomly passed between nodes from time to time.
+
+* Ad. 7 This will be hard as fuck, but it is a must-have, unfortunatelly. 
+The process is somewhat described in `solution.txt`, but we will 
+think about it more once everything else is done.
