@@ -34,26 +34,27 @@ Opis src:
 * `utils.h`  -- utilities
 
 Roadmap:
-[ ] 1. Veirfy that threaded queues work.
 
-[ ] 2. Write some kind of manual test to confirm resource acquisition works.
+- [ ] 1. Veirfy that threaded queues work.
 
-[ ] 3. Implement simple participants gathering as described in `solution.txt`
+- [ ] 2. Write some kind of manual test to confirm resource acquisition works.
 
-[ ] 3a.    Implement a simple manual test for it
+- [ ] 3. Implement simple participants gathering as described in `solution.txt`
 
-[ ] 4. Implement aquiering acceptnace as in `solution.txt`
+- [ ] 3a.    Implement a simple manual test for it
 
-[ ] 4a.    Implement a simple manual test for it
+- [ ] 4. Implement aquiering acceptnace as in `solution.txt`
 
-[ ] 5. Implement the whole meeting logic 
+- [ ] 4a.    Implement a simple manual test for it
+
+- [ ] 5. Implement the whole meeting logic 
 (participants + resource + accept) in one place.
 
-[ ] 5a.    Implement a simple manual test for it
+- [ ] 5a.    Implement a simple manual test for it
 
-[ ] 6. Implement random resource exchange 
+- [ ] 6. Implement random resource exchange 
 
-[ ] 7. Implement acceptor passing logic
+- [ ] 7. Implement acceptor passing logic
 
 Notes:
 
