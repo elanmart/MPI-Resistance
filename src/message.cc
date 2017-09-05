@@ -33,6 +33,20 @@ Message  create_message(int msg_number, int sender, int destination,
    return msg;
 }
 
+Message create_message_to_acceptor(int msg_number, int sender) {
+  auto timestamp = (int) time(NULL);
+
+  Message msg = {
+      -1,
+      -1,
+      msg_number,
+      timestamp,
+      sender,
+      -1,
+      Words::MEETING_ACCEPTANCE_ASK,
+  };
+}
+
 Message detach(Message other) {
    Message msg = other;
    msg.__from__ = -1;

@@ -8,6 +8,7 @@ Makefile.in
 /py-compile
 /test-driver
 /ylwrap
+cmake-build-debug
 
 # http://www.gnu.org/software/autoconf
 
