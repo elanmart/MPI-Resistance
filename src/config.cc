@@ -6,7 +6,7 @@ Config::Config() {
    max_neighbours = 3;
    avg_neighbours = 2;
    n_resources    = 2;
-   tree_size      = -1;
+   tree_size      = 10;
 }
 
 void Config::parse_args(int argc, char** argv) {

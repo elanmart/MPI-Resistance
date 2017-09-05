@@ -6,22 +6,25 @@
 #define PAYLOAD_SIZE 8
 
 enum Words {
-   // resource acquisition
+   // Resource acquisition
    RESOURCE_REQUEST,  // wysyłany przez node który chce risors
    RESOURCE_ANSWER,   // jeśli mam risors, to tym odpowiadam na RESOURCE_REQUEST
    RESOURCE_ACK,      // tym odpowiadame na RESOURCE_ANSWER jeśli chcę pobrać risors
    RESOURCE_SENT,     // tym odpowiadam na RESOURCE_ACK, potwierzam wysyłkę
-   RESOURCE_DEN,      // tym odpowadam na RESOURCE_ANSWER jeśli nie chcę pobrać risorsa
+   RESOURCE_DENIED,      // tym odpowadam na RESOURCE_ANSWER jeśli nie chcę pobrać risorsa
+
+    // Acceptance acquisition
+   MEETING_ACCEPTANCE_ASK, // Broadcastowe zapytanie do wyzszych o to czy w ogole maja token akceptora
+   MEETING_ACCEPTANCE_TIME_INFO, // powiadomeinie innych akceptorów o odebraniu prosby - maja sobie dopisac do kolejek priorytetowych
+   MEETING_ACCEPTANCE_GRANT, // Zapytanie - "jak masz to daj pozwolenie"
+   MEETING_ACCEPTANCE_RELEASE, // Zapytanie zawierające pozwolenie
 
 
-    // acceptance acquisition // TODO -- JESZCZE NIE WIADOMO JAK TA KOMUNIKACJA POWINNA WYGLĄDAĆ
-   MEETING_REQUEST,
-   MEETING_FINISHED,
-   REQUEST_ACK,
-   REQUEST_ALLOW,
+  // Przekazywanie akceptorów na zasadzie delayed.
+  // Rodzic "mianuje" kogos innego i powoli
 
-   // organizing a meeting // TODO -- JESZCZE NIE WIADOMO JAK TA KOMUNIKACJA POWINNA WYGLĄDAĆ
-   MEETING_JOIN,
+   // Organizing a meeting
+   MEETING_INVITE,
    MEETING_ACCEPT,
    MEETING_DECLINE,
    MEETING_CANCEL,
@@ -29,7 +32,6 @@ enum Words {
    MEETING_NEW_ORG_PROBE,
    MEETING_NEW_ORG,
    MEETING_PARTC_ACK,
-   MEETING_MERGE,
 
    NONE
 };

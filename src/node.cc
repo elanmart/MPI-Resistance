@@ -4,28 +4,58 @@
 // --- ctors ---
 
 Node::Node() {
-   level_          = 0;
-   parent_         = -1;
-   msg_number_     = 0;
+   level_ = 0;
+   parent_ = -1;
+   msg_number_ = 0;
    resource_count_ = 0;
    resource_state_ = ResourceState::IDLE;
-   meeting_state_  = MeetingState::IDLE;
-   STOP_           = false;
+   meeting_state_ = MeetingState::IDLE;
+   invitees_count_ = 0;
+   STOP_ = false;
+   initialize_mapping();
 }
 
 Node::Node(int ID) : Node() {
    ID_ = ID;
+   initialize_mapping();
 }
 
 Node::Node(int *buffer) : Node() {
    deserialize(buffer);
+   initialize_mapping();
+}
+
+Node::initialize_mapping() {
+   mapping[Words::NONE] = &Node::HandleNoneMessage;
+
+   mapping[Words::RESOURCE_REQUEST] = &Node::HandleResourceRequest;
+   mapping[Words::RESOURCE_ANSWER] = &Node::HandleResourceAnswer;
+   mapping[Words::RESOURCE_ACK] = &Node::HandleResourceAck;
+   mapping[Words::RESOURCE_DENIED] = &Node::HandleResourceDenial;
+   mapping[Words::RESOURCE_SENT] = &Node::HandleResourceDelivery;
+
+   mapping[Words::MEETING_ACCEPTANCE_ASK] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_ACCEPTANCE_TIME_INFO] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_ACCEPTANCE_GRANT] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_ACCEPTANCE_RELEASE] = &Node::HandleNoneMessage; // TODO
+
+   mapping[Words::MEETING_INVITE] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_ACCEPT] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_DECLINE] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_CANCEL] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_ORG_ACCEPT] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_NEW_ORG_PROBE] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_NEW_ORG] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_PARTC_ACK] = &Node::HandleNoneMessage; // TODO
 }
 
 void Node::set_manager(Manager *m) {
    manager_ = m;
 }
 
-// --- comms ---
+//
+// --- Communication Helper Functions ---
+//
 void Node::new_message(int destination, Words w, int payload[]) {
    msg_number_++;
    auto msg = create_message(msg_number_, ID_, destination, w, payload);
@@ -43,7 +73,25 @@ bool Node::get(Message *msg) {
    return manager_->get(msg);
 }
 
-// --- logic ---
+
+void Node::send_to(Message msg, int dest) {
+   manager_->put(msg, dest);
+}
+
+void Node::send_to(Message msg, set<int> recipients) {
+   for (auto id : recipients)
+      send_to(msg, id);
+}
+
+void Node::broadcast(Message msg) {
+   send_to(msg, parent_);
+   send_to(msg, children_);
+   send_to(msg, neighbours_);
+}
+
+//
+// --- Core Logic ---
+//
 void Node::start_event_loop() {
    Message msg;
    manager_->start();
@@ -70,102 +118,6 @@ void Node::consume(Message &msg) {
    }
 }
 
-void Node::initialzie_meeting() {
-   LOG("Witam");
-
-
-}
-
-void Node::get_resource() {
-   assert(resource_count_ == 0);
-   LOG("I need resource. Please propagate this to everyone!");
-   new_message(ALL, Words::RESOURCE_REQUEST);
-}
-
-// todo: WIP
-void Node::handle(Message msg) {
-   if (msg.word == Words::NONE) {
-
-      //todo: working on participants acquisition here
-
-   } else if (msg.word == Words::MEETING_ACCEPT) {
-      participants_.insert(msg.sender);
-      awaiting_response_ -= 1;
-
-
-   } else if (msg.word == Words::MEETING_DECLINE) {
-      awaiting_response_ -= 1;
-
-   } else if (msg.word == Words::MEETING_JOIN) {
-      if (time_penalty_ > 0)
-         new_message(msg.sender, Words::MEETING_DECLINE);
-
-      if (meeting_state_ == MeetingState::IDLE) {
-         new_message(msg.sender, Words::MEETING_ACCEPT);
-         meeting_state_ = MeetingState::WAITING;
-      }
-
-      if (meeting_state_ == MeetingState::MASTER_ORG){
-         meeting_state_ = MeetingState::SLAVE_ORG;
-
-      }
-
-   } else if (msg.word == Words::MEETING_CANCEL) {
-   } else if (msg.word == Words::MEETING_NEW_ORG) {
-   } else if (msg.word == Words::MEETING_NEW_ORG_PROBE) {
-   } else if (msg.word == Words::MEETING_PARTC_ACK) {
-
-      // -------------------------------------------------------------
-
-      // hey, u got some resource?
-   } else if (msg.word == Words::RESOURCE_REQUEST and resource_count_ > 0){
-      LOG("Handling resource request");
-
-      if (resource_state_ == ResourceState::LOCKED) {
-         //todo: put to a queue of awaiting requests.
-      } else if (resource_state_ == ResourceState::IDLE){
-         resource_state_ = ResourceState::LOCKED;
-         new_message(msg.sender, Words::RESOURCE_ANSWER);
-
-         LOG("Send a response");
-      }
-
-      // hey, i got some resource, u want?
-   } else if (msg.word == Words::RESOURCE_ANSWER){
-      LOG("Recieved a response");
-      if (resource_state_ == ResourceState::IDLE) {
-         resource_state_ = ResourceState::WAITING;
-         new_message(msg.sender, Words::RESOURCE_ACK);
-         LOG("Accepted a resource of %d", msg.sender);
-      } else {
-         new_message(msg.sender, Words::RESOURCE_DEN);
-         LOG("Denied a resource of %d", msg.sender);
-      }
-
-      // hey, i want ur resource. pls send
-   } else if (msg.word == Words::RESOURCE_ACK) {
-      resource_count_ -= 1;
-      new_message(msg.sender, Words::RESOURCE_SENT);
-      LOG("Someone wanted my resource. Sent");
-
-      // hey i dont want ur resource after all
-   } else if (msg.word == Words::RESOURCE_DEN) {
-      // todo: next in line
-      resource_state_ = ResourceState::IDLE;
-      LOG("Someone didn't want my resource.");
-
-      // hey, here's the resource
-   } else if (msg.word == Words::RESOURCE_SENT){
-      resource_count_ += 1;
-      meet();
-   }
-}
-
-void Node::meet() {
-   LOG("MEETING");
-   resource_state_ = ResourceState::IDLE;
-}
-
 bool Node::accept(Message &msg) {
    auto key = identifier(msg);
 
@@ -177,35 +129,154 @@ bool Node::accept(Message &msg) {
    }
 }
 
-void Node::send_to(Message msg, int dest) {
-   manager_->put(msg, dest);
+void Node::handle(Message msg) {
+   comm_func_map_t::iterator x = this->mapping.find(msg.word);
+   if (x != mapping.end()) {
+      (*(x->second))(msg);
+   }
 }
 
-void Node::send_to(Message msg, set<int> recipients) {
-   for (auto id : recipients)
-      send_to(msg, id);
+//
+// --- Abilities ---
+//
+void Node::invite_participants() {
+   if (this->meeting_state_ == MeetingState::IDLE) {
+      LOG("Inviting participants...");
+
+      this->meeting_state_ = MeetingState::MASTER_ORG;
+
+      set<int> invitees;
+      invitees.insert(children_.begin(), children_.end());
+      invitees.insert(neighbours_.begin(), neighbours_.end());
+      invitees.insert(parent_);
+
+      this->invitees_count_ = (int) invitees.size();
+
+      for (auto id : invitees) {
+         new_message(id, MEETING_NEW_ORG_PROBE);
+      }
+   }
 }
 
-void Node::broadcast(Message msg) {
-   send_to(msg, parent_);
-   send_to(msg, children_);
-   send_to(msg, neighbours_);
+void Node::ask_for_resource() {
+   assert(resource_count_ == 0);
+   LOG("I need resource. Please propagate this to everyone!");
+   new_message(ALL, Words::RESOURCE_REQUEST);
 }
 
-// --- serialze ---
+void Node::try_start_meeting() {
+   if (awaiting_response_ == 0) {
+      if (participants_.size() >= floor(invitees_count_ * percentage_threshold_)) {
+         // Send message about started meeting
+      } else {
+         // Cancel meeting
+      }
+   }
+}
+
+void Node::meet() {
+   LOG("Meeting");
+   resource_state_ = ResourceState::IDLE;
+}
+
+//
+// --- Message Handler Functions ---
+//
+void Node::HandleNoneMessage(Message msg) {
+
+}
+
+void Node::HandleMeetingAccept(Message msg) {
+   this->participants_.insert(msg.sender);
+   awaiting_response_ -= 1;
+   try_start_meeting();
+}
+
+void Node::HandleMeetingDecline(Message msg) {
+   awaiting_response_ -= 1;
+   try_start_meeting();
+}
+
+void Node::HandleMeetingJoin(Message msg) {
+   if (time_penalty_ > 0)
+      new_message(msg.sender, Words::MEETING_DECLINE);
+
+   if (meeting_state_ == MeetingState::IDLE) {
+      new_message(msg.sender, Words::MEETING_ACCEPT);
+      meeting_state_ = MeetingState::WAITING;
+   }
+
+   if (meeting_state_ == MeetingState::MASTER_ORG) {
+      meeting_state_ = MeetingState::SLAVE_ORG;
+
+   }
+}
+
+void Node::HandleMeetingCancel(Message msg) {
+   meeting_state_ = MeetingState::IDLE;
+}
+
+void Node::HandleResourceRequest(Message msg) {
+   if (resource_count_ > 0) {
+      LOG("Handling resource request");
+
+      if (resource_state_ == ResourceState::LOCKED) {
+         //todo: put to a queue of awaiting requests.
+      } else if (resource_state_ == ResourceState::IDLE) {
+         resource_state_ = ResourceState::LOCKED;
+         new_message(msg.sender, Words::RESOURCE_ANSWER);
+
+         LOG("Send a response");
+      }
+   } else {
+      // TODO: What else?
+   }
+}
+
+void Node::HandleResourceAnswer(Message msg) {
+   LOG("Recieved a response");
+   if (resource_state_ == ResourceState::IDLE) {
+      resource_state_ = ResourceState::WAITING;
+      new_message(msg.sender, Words::RESOURCE_ACK);
+      LOG("Accepted a resource of %d", msg.sender);
+   } else {
+      new_message(msg.sender, Words::RESOURCE_DENIED);
+      LOG("Denied a resource of %d", msg.sender);
+   }
+}
+
+void Node::HandleResourceAck(Message msg) {
+   resource_count_ -= 1;
+   new_message(msg.sender, Words::RESOURCE_SENT);
+   LOG("Someone wanted my resource. Sent");
+}
+
+void Node::HandleResourceDenial(Message msg) {
+   resource_state_ = ResourceState::IDLE;
+   LOG("Someone didn't want my resource.");
+}
+
+void Node::HandleResourceDelivery(Message msg) {
+   resource_count_ += 1;
+   meet();
+}
+
+//
+// --- Serialization Helpers
+//
 pair<int, int *> Node::serialize() {
-   int n_children   = (int) children_.size();
+   int n_children = (int) children_.size();
    int n_neighbours = (int) neighbours_.size();
 
    int n_items = 4 + 2 + n_children + n_neighbours;
-   int* buffer = new int[n_items];
+   int *buffer = new int[n_items];
 
-   buffer[0]  = ID_;
-   buffer[1]  = level_;
-   buffer[2]  = parent_;
-   buffer[3]  = resource_count_;
-   buffer[4]  = n_children;
-   buffer[5]  = n_neighbours;
+   buffer[0] = ID_;
+   buffer[1] = level_;
+   buffer[2] = parent_;
+   buffer[3] = resource_count_;
+   buffer[4] = n_children;
+   buffer[5] = n_neighbours;
    int offset = 6;
 
    for (auto item : children_)
@@ -217,22 +288,22 @@ pair<int, int *> Node::serialize() {
    return make_pair(n_items, buffer);
 }
 
-void Node::deserialize(int* buffer) {
-   ID_               = buffer[0];
-   level_            = buffer[1];
-   parent_           = buffer[2];
-   resource_count_   = buffer[3];
-   int n_children    = buffer[4];
-   int n_neighbours  = buffer[5];
-   int offset        = 6;
+void Node::deserialize(int *buffer) {
+   ID_ = buffer[0];
+   level_ = buffer[1];
+   parent_ = buffer[2];
+   resource_count_ = buffer[3];
+   int n_children = buffer[4];
+   int n_neighbours = buffer[5];
+   int offset = 6;
 
    children_.clear();
    neighbours_.clear();
 
-   for (int i=offset; i<offset + n_children; i++)
+   for (int i = offset; i < offset + n_children; i++)
       children_.insert(buffer[i]);
 
    offset += n_children;
-   for (int i=offset; i<offset+n_neighbours; i++)
+   for (int i = offset; i < offset + n_neighbours; i++)
       neighbours_.insert(buffer[i]);
 }
