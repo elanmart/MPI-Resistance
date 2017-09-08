@@ -13,6 +13,7 @@ enum class ResourceState {
     WAITING, // Resource waiting for response
     LOCKED // Resource being used
 };
+
 enum class MeetingState {
     IDLE, // Not participating, can join
     WAITING, // Waiting for response (meeting start or decline)
@@ -40,6 +41,7 @@ public:
     int32_t parent_;
     set<int32_t> neighbours_;
     set<int32_t> children_;
+    set<int> invitees_;
 
     // Word <-> Handler function mapping
     comm_func_map_t mapping;
@@ -57,7 +59,6 @@ public:
     int resource_count_;
     int awaiting_response_;
     int time_penalty_;
-    int invitees_count_;
     double percentage_threshold_;
 
     set<int> participants_;
@@ -94,7 +95,7 @@ private:
     void meet(); // TODO - ?
     void ask_for_resource(); // Asks someone higher in the hierarchy for permission to organize meeting
 
-    void HandleMeetingJoin(Message msg);
+    void HandleMeetingInvitiation(Message msg);
 
     void HandleMeetingAccept(Message msg);
 
@@ -103,6 +104,8 @@ private:
     void HandleMeetingCancel(Message msg);
 
     void HandleMeetingDecline(Message msg);
+
+    void HandleMeetingStart(Message msg);
 
     void HandleResourceRequest(Message msg);
 
@@ -113,6 +116,16 @@ private:
     void HandleResourceDenial(Message msg);
 
     void HandleResourceDelivery(Message msg);
+
+    void HandleMeetingAcceptanceRequest(Message msg);
+
+    void HandleMeetingAcceptanceAnswer(Message msg);
+
+    void HandleMeetingAcceptanceAck(Message msg);
+
+    void HandleMeetingAcceptanceDenial(Message msg);
+
+    void HandleMeetingAcceptanceDelivery(Message msg);
 
     long initialize_mapping();
 };
