@@ -10,7 +10,6 @@ Node::Node() {
    resource_count_ = 0;
    resource_state_ = ResourceState::IDLE;
    meeting_state_ = MeetingState::IDLE;
-   invitees_count_ = 0;
    STOP_ = false;
    initialize_mapping();
 }
@@ -34,19 +33,24 @@ Node::initialize_mapping() {
    mapping[Words::RESOURCE_DENIED] = &Node::HandleResourceDenial;
    mapping[Words::RESOURCE_SENT] = &Node::HandleResourceDelivery;
 
-   mapping[Words::MEETING_ACCEPTANCE_ASK] = &Node::HandleNoneMessage; // TODO
-   mapping[Words::MEETING_ACCEPTANCE_TIME_INFO] = &Node::HandleNoneMessage; // TODO
-   mapping[Words::MEETING_ACCEPTANCE_GRANT] = &Node::HandleNoneMessage; // TODO
-   mapping[Words::MEETING_ACCEPTANCE_RELEASE] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_ACCEPTANCE_REQUEST] = &Node::HandleMeetingAcceptanceRequest; // TODO
+   mapping[Words::MEETING_ACCEPTANCE_ANSWER] = &Node::HandleMeetingAcceptanceAnswer; // TODO
+   mapping[Words::MEETING_ACCEPTANCE_ACK] = &Node::HandleMeetingAcceptanceAck; // TODO
+   mapping[Words::MEETING_ACCEPTANCE_DENIED] = &Node::HandleMeetingAcceptanceDenial; // TODO
+   mapping[Words::MEETING_ACCEPTANCE_SENT] = &Node::HandleMeetingAcceptanceDelivery; // TODO
 
-   mapping[Words::MEETING_INVITE] = &Node::HandleNoneMessage; // TODO
-   mapping[Words::MEETING_ACCEPT] = &Node::HandleNoneMessage; // TODO
-   mapping[Words::MEETING_DECLINE] = &Node::HandleNoneMessage; // TODO
-   mapping[Words::MEETING_CANCEL] = &Node::HandleNoneMessage; // TODO
-   mapping[Words::MEETING_ORG_ACCEPT] = &Node::HandleNoneMessage; // TODO
-   mapping[Words::MEETING_NEW_ORG_PROBE] = &Node::HandleNoneMessage; // TODO
-   mapping[Words::MEETING_NEW_ORG] = &Node::HandleNoneMessage; // TODO
-   mapping[Words::MEETING_PARTC_ACK] = &Node::HandleNoneMessage; // TODO
+   mapping[Words::MEETING_INVITE] = &Node::HandleMeetingInvitiation;
+   mapping[Words::MEETING_ACCEPT] = &Node::HandleMeetingAccept;
+   mapping[Words::MEETING_DECLINE] = &Node::HandleMeetingDecline;
+   mapping[Words::MEETING_CANCEL] = &Node::HandleMeetingCancel;
+   mapping[Words::MEETING_START] = &Node::HandleMeetingStart;
+
+
+   // TODO - Do we need these?
+   mapping[Words::MEETING_ORG_ACCEPT] = &Node::HandleNoneMessage;
+   mapping[Words::MEETING_NEW_ORG_PROBE] = &Node::HandleNoneMessage;
+   mapping[Words::MEETING_NEW_ORG] = &Node::HandleNoneMessage;
+   mapping[Words::MEETING_PARTC_ACK] = &Node::HandleNoneMessage;
 }
 
 void Node::set_manager(Manager *m) {
@@ -131,6 +135,7 @@ bool Node::accept(Message &msg) {
 
 void Node::handle(Message msg) {
    comm_func_map_t::iterator x = this->mapping.find(msg.word);
+
    if (x != mapping.end()) {
       (*(x->second))(msg);
    }
@@ -145,15 +150,12 @@ void Node::invite_participants() {
 
       this->meeting_state_ = MeetingState::MASTER_ORG;
 
-      set<int> invitees;
-      invitees.insert(children_.begin(), children_.end());
-      invitees.insert(neighbours_.begin(), neighbours_.end());
-      invitees.insert(parent_);
+      this->invitees_.insert(children_.begin(), children_.end());
+      this->invitees_.insert(neighbours_.begin(), neighbours_.end());
+      this->invitees_.insert(parent_);
 
-      this->invitees_count_ = (int) invitees.size();
-
-      for (auto id : invitees) {
-         new_message(id, MEETING_NEW_ORG_PROBE);
+      for (auto id : this->invitees_) {
+         new_message(id, MEETING_INVITE);
       }
    }
 }
@@ -166,24 +168,35 @@ void Node::ask_for_resource() {
 
 void Node::try_start_meeting() {
    if (awaiting_response_ == 0) {
-      if (participants_.size() >= floor(invitees_count_ * percentage_threshold_)) {
+      LOG("Starting meeting...");
+
+      if (participants_.size() >= floor(this->invitees_.size() * percentage_threshold_)) {
+         LOG("Sending invitations...");
          // Send message about started meeting
+         for (auto id : this->invitees_) {
+            new_message(id, MEETING_START);
+         }
       } else {
-         // Cancel meeting
+         LOG("Not enough participants to start meeting, canceling...");
+
+         for (auto id : this->invitees_) {
+            new_message(id, MEETING_CANCEL);
+         }
       }
    }
 }
 
 void Node::meet() {
-   LOG("Meeting");
+   LOG("Received resource, let's invite guests.");
    resource_state_ = ResourceState::IDLE;
+   this->invite_participants();
 }
 
 //
-// --- Message Handler Functions ---
+// ----- Invitation Handlers -----
 //
 void Node::HandleNoneMessage(Message msg) {
-
+   LOG("FATAL: UNHANDLED BEHAVIOR");
 }
 
 void Node::HandleMeetingAccept(Message msg) {
@@ -197,7 +210,7 @@ void Node::HandleMeetingDecline(Message msg) {
    try_start_meeting();
 }
 
-void Node::HandleMeetingJoin(Message msg) {
+void Node::HandleMeetingInvitiation(Message msg) {
    if (time_penalty_ > 0)
       new_message(msg.sender, Words::MEETING_DECLINE);
 
@@ -208,14 +221,23 @@ void Node::HandleMeetingJoin(Message msg) {
 
    if (meeting_state_ == MeetingState::MASTER_ORG) {
       meeting_state_ = MeetingState::SLAVE_ORG;
-
    }
 }
 
 void Node::HandleMeetingCancel(Message msg) {
    meeting_state_ = MeetingState::IDLE;
+   this->invitees_.clear();
+
+   // TODO remove participants and other things?
 }
 
+void Node::HandleMeetingStart(Message msg) {
+
+}
+
+//
+// ----- Resource handling
+//
 void Node::HandleResourceRequest(Message msg) {
    if (resource_count_ > 0) {
       LOG("Handling resource request");
@@ -259,6 +281,35 @@ void Node::HandleResourceDenial(Message msg) {
 void Node::HandleResourceDelivery(Message msg) {
    resource_count_ += 1;
    meet();
+}
+
+//
+// ----- Meeting acceptance handler
+//
+// TODO - whole behavior
+void Node::HandleMeetingAcceptanceRequest(Message msg) {
+   // if I'm acceptor then accept
+   // else pass to nearest acceptor via broadcast
+}
+
+// TODO - whole behavior
+void Node::HandleMeetingAcceptanceAnswer(Message msg) {
+
+}
+
+// TODO - whole behavior
+void Node::HandleMeetingAcceptanceAck(Message msg) {
+
+}
+
+// TODO - whole behavior
+void Node::HandleMeetingAcceptanceDenial(Message msg) {
+
+}
+
+// TODO - whole behavior
+void Node::HandleMeetingAcceptanceDelivery(Message msg) {
+
 }
 
 //
