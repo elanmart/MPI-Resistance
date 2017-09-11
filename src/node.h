@@ -8,18 +8,19 @@
 
 class Manager; // todo: handle this;
 
+
 enum class ResourceState {
-    IDLE, // Resource not used
+    IDLE,    // Resource not used
     WAITING, // Resource waiting for response
-    LOCKED // Resource being used
+    LOCKED   // Resource being used
 };
 
 enum class MeetingState {
-    IDLE, // Not participating, can join
-    WAITING, // Waiting for response (meeting start or decline)
-    LOCKED, // Meeting in progress
+    IDLE,       // Not participating, can join
+    WAITING,    // Waiting for response (meeting start or decline)
+    LOCKED,     // Meeting in progress
     MASTER_ORG, // Meeting organizer
-    SLAVE_ORG // Meeting participant - TODO: Difference between Locked?
+    SLAVE_ORG   // Meeting participant - TODO: Difference between Locked?
 };
 
 
@@ -65,7 +66,7 @@ public:
 
     void start_event_loop(); // Initializes main event loop
 
-    void new_message(int destination, Words w, int payload[] = nullptr);
+    void send_new_message(int destination, Words w, int *payload = nullptr);
 
     void _send(Message msg);
 
