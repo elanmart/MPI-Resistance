@@ -89,6 +89,7 @@ public:
 
     // synchronization
     bool STOP_;
+
 private:
     void try_start_meeting(); // After receiving a response from Invitee, check if everyone already responded. If true, start meeting
     void invite_participants(); // After getting permission, invites participants

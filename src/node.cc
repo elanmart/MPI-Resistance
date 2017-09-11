@@ -45,12 +45,6 @@ void Node::initialize_mapping() {
    comm_func_map_t[Words::MEETING_START] = &Node::HandleMeetingStart;
    comm_func_map_t[Words::MEETING_END] = &Node::HandleMeetingEnd;
 
-
-//   TODO - Do we need these?
-//   mapping[Words::MEETING_ORG_ACCEPT] = Node::HandleNoneMessage;
-//   mapping[Words::MEETING_NEW_ORG_PROBE] = Node::HandleNoneMessage;
-//   mapping[Words::MEETING_NEW_ORG] = Node::HandleNoneMessage;
-//   mapping[Words::MEETING_PARTC_ACK] = Node::HandleNoneMessage;
    return;
 }
 
