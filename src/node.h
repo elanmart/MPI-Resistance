@@ -13,7 +13,8 @@ class Manager; // todo: handle this;
 enum class ResourceState {
     IDLE,    // Resource not used
     WAITING, // Resource waiting for response
-    LOCKED   // Resource being used
+    LOCKED,  // Resource being used
+    NEEDED,  // Resource available, but can't be used yet. TODO: rename
 };
 
 enum class MeetingState {

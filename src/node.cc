@@ -151,7 +151,7 @@ void Node::initialize_meeting_procedure() {
    meeting_state_ = MeetingState::MASTER_ORG;
 
    ask_for_resource();
-   sleep(1);
+   sleep(5);
 }
 
 void Node::invite_participants() {
@@ -175,17 +175,26 @@ void Node::invite_participants() {
 }
 
 void Node::ask_for_resource() {
+
    assert(resource_state_ != ResourceState::WAITING
           && "Resource requested in an invalid state. Make sure your in IDLE if you want to organize a meeting");
 
    if (resource_count_ == 0) {
+
       LOG("I need resource. Please propagate this to everyone!");
       resource_state_ = ResourceState::WAITING;
       send_new_message(ALL, Words::RESOURCE_REQUEST);
 
-   } else if (resource_count_ > 0 && resource_state_ != ResourceState::IDLE) {
-      LOG("I've got resource, no need to ask.");
-      on_resource_available();
+   } else if (resource_count_ > 0) {
+
+      if (resource_state_ == ResourceState::IDLE) {
+         LOG("I've got resource, no need to ask.");
+         on_resource_available();
+
+      } else {
+         LOG("I've got resource, But it's locked. We'll handle this later.");
+         resource_state_ = ResourceState::NEEDED;
+      }
    }
 }
 
@@ -216,7 +225,7 @@ void Node::try_start_meeting() {
             send_new_message(id, MEETING_START);
          }
 
-         sleep(1);
+         sleep(5);
 
          LOG("Meeting is over!");
 
@@ -317,6 +326,8 @@ void Node::HandleResourceRequest(Message msg) {
 
       if (resource_state_ == ResourceState::LOCKED)
          LOG("I've got a LOCKED resource");
+      if (resource_state_ == ResourceState::NEEDED)
+         LOG("I've got a NEEDED resource");
       if (resource_state_ == ResourceState::WAITING)
          LOG("I'm waiting for resource myself");
       if (resource_count_ == 0)
@@ -357,8 +368,16 @@ void Node::HandleResourceAck(Message msg) {
 void Node::HandleResourceDenial(__unsued Message msg) {
    LOG("Someone didn't want my resource.");
 
-   resource_state_ = ResourceState::IDLE;
-   perhaps_next_answer();
+   if (resource_state_ == ResourceState::NEEDED) {
+      LOG("I need a resource, so i'll consume it myself");
+
+      resource_state_ = ResourceState::IDLE;
+      ask_for_resource();
+
+   } else {
+      resource_state_ = ResourceState::IDLE;
+      perhaps_next_answer();
+   }
 }
 
 void Node::HandleResourceDelivery(__unsued Message msg) {
