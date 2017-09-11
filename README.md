@@ -12,7 +12,7 @@ make
 To run:
 ```bash
 cd build
-mpirun -np 3 ./PR
+killall PR && mpirun -np 3 ./PR
 ```
 
 Opis src:		

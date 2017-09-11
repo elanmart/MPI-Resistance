@@ -36,6 +36,7 @@ public:
     // Identity
     int32_t ID_;    // ID
     int32_t level_; // Depth in tree
+    bool is_acceptor_;
 
     // Topology
     int32_t parent_;
@@ -73,6 +74,7 @@ public:
     void broadcast(Message msg); // Sends a message to all neighbours, children and parent
     bool accept(Message &msg);   // Checks if we haven't received that msg already
     void consume(Message &msg);  // Checks if message should be consumed by us or forwarded
+    void forward(Message msg, int target);  // Sends message to it's neighbours
 
     void send_to(Message msg, set<int> recipients); // Sends message to a set of receipents
     void send_to(Message msg, int dest); // Sends message to destination
@@ -134,8 +136,7 @@ private:
 #define DASH "=====================================\n"
 #define LOG(msg, ...) printf(DASH                 \
                              "Node :: %d     \n"  \
-                             "msg  :: " msg "\n"  \
-                             DASH,                \
+                             "msg  :: " msg "\n",  \
                              this->ID_, ##__VA_ARGS__)
 
 
