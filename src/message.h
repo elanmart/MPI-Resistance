@@ -18,7 +18,7 @@ enum Words {
 //   MEETING_ACCEPTANCE_TIME_INFO, // powiadomeinie innych akceptorów o odebraniu prosby - maja sobie dopisac do kolejek priorytetowych
 //   MEETING_ACCEPTANCE_GRANT, // Zapytanie - "jak masz to daj pozwolenie"
 //   MEETING_ACCEPTANCE_RELEASE, // Zapytanie zawierające pozwolenie
-//    MEETING_ACCEPTANCE_DENIED, // Acceptor denied organizing a meeting
+//   MEETING_ACCEPTANCE_DENIED, // Acceptor denied organizing a meeting
 
     // Logic similar to resource acquisition
     MEETING_ACCEPTANCE_REQUEST,
@@ -33,6 +33,7 @@ enum Words {
     MEETING_DECLINE,
     MEETING_CANCEL,
     MEETING_START,
+    MEETING_END,
 
     MEETING_ORG_ACCEPT,
     MEETING_NEW_ORG_PROBE,
@@ -40,6 +41,27 @@ enum Words {
     MEETING_PARTC_ACK,
 
     NONE
+};
+
+static const char * EnumStrings[] = {
+      "RESOURCE_REQUEST",
+      "RESOURCE_ANSWER",
+      "RESOURCE_ACK",
+      "RESOURCE_SENT",
+      "RESOURCE_DENIED"
+
+      "MEETING_ACCEPTANCE_REQUEST",
+      "MEETING_ACCEPTANCE_ANSWER",
+      "MEETING_ACCEPTANCE_ACK",
+      "MEETING_ACCEPTANCE_DENIED",
+      "MEETING_ACCEPTANCE_SENT",
+
+      "MEETING_INVITE",
+      "MEETING_ACCEPT",
+      "MEETING_DECLINE",
+      "MEETING_CANCEL",
+      "MEETING_START",
+      "MEETING_END",
 };
 
 typedef struct _Message {

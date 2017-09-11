@@ -16,41 +16,43 @@ Node::Node() {
 
 Node::Node(int ID) : Node() {
    ID_ = ID;
-   initialize_mapping();
 }
 
 Node::Node(int *buffer) : Node() {
    deserialize(buffer);
-   initialize_mapping();
 }
 
-Node::initialize_mapping() {
-   mapping[Words::NONE] = &Node::HandleNoneMessage;
+void Node::initialize_mapping() {
+   comm_func_map_t[Words::NONE] = &Node::HandleNoneMessage;
 
-   mapping[Words::RESOURCE_REQUEST] = &Node::HandleResourceRequest;
-   mapping[Words::RESOURCE_ANSWER] = &Node::HandleResourceAnswer;
-   mapping[Words::RESOURCE_ACK] = &Node::HandleResourceAck;
-   mapping[Words::RESOURCE_DENIED] = &Node::HandleResourceDenial;
-   mapping[Words::RESOURCE_SENT] = &Node::HandleResourceDelivery;
+   comm_func_map_t[Words::RESOURCE_REQUEST] = &Node::HandleResourceRequest;
+   comm_func_map_t[Words::RESOURCE_ANSWER] = &Node::HandleResourceAnswer;
+   comm_func_map_t[Words::RESOURCE_ACK] = &Node::HandleResourceAck;
+   comm_func_map_t[Words::RESOURCE_DENIED] = &Node::HandleResourceDenial;
+   comm_func_map_t[Words::RESOURCE_SENT] = &Node::HandleResourceDelivery;
 
-   mapping[Words::MEETING_ACCEPTANCE_REQUEST] = &Node::HandleMeetingAcceptanceRequest; // TODO
-   mapping[Words::MEETING_ACCEPTANCE_ANSWER] = &Node::HandleMeetingAcceptanceAnswer; // TODO
-   mapping[Words::MEETING_ACCEPTANCE_ACK] = &Node::HandleMeetingAcceptanceAck; // TODO
-   mapping[Words::MEETING_ACCEPTANCE_DENIED] = &Node::HandleMeetingAcceptanceDenial; // TODO
-   mapping[Words::MEETING_ACCEPTANCE_SENT] = &Node::HandleMeetingAcceptanceDelivery; // TODO
+   comm_func_map_t[Words::MEETING_ACCEPTANCE_REQUEST] = &Node::HandleMeetingAcceptanceRequest; // TODO
+   comm_func_map_t[Words::MEETING_ACCEPTANCE_ANSWER] = &Node::HandleMeetingAcceptanceAnswer; // TODO
+   comm_func_map_t[Words::MEETING_ACCEPTANCE_ACK] = &Node::HandleMeetingAcceptanceAck; // TODO
+   comm_func_map_t[Words::MEETING_ACCEPTANCE_DENIED] = &Node::HandleMeetingAcceptanceDenial; // TODO
+   comm_func_map_t[Words::MEETING_ACCEPTANCE_SENT] = &Node::HandleMeetingAcceptanceDelivery; // TODO
 
-   mapping[Words::MEETING_INVITE] = &Node::HandleMeetingInvitiation;
-   mapping[Words::MEETING_ACCEPT] = &Node::HandleMeetingAccept;
-   mapping[Words::MEETING_DECLINE] = &Node::HandleMeetingDecline;
-   mapping[Words::MEETING_CANCEL] = &Node::HandleMeetingCancel;
-   mapping[Words::MEETING_START] = &Node::HandleMeetingStart;
+   comm_func_map_t[Words::MEETING_INVITE] = &Node::HandleMeetingInvitiation;
+   comm_func_map_t[Words::MEETING_ACCEPT] = &Node::HandleMeetingInvitationAccept;
+   comm_func_map_t[Words::MEETING_DECLINE] = &Node::HandleMeetingInvitationDecline;
+   comm_func_map_t[Words::MEETING_CANCEL] = &Node::HandleMeetingCancel;
+   comm_func_map_t[Words::MEETING_START] = &Node::HandleMeetingStart;
+   comm_func_map_t[Words::MEETING_END] = &Node::HandleMeetingEnd;
+
+   LOG("Mapping initialized.");
 
 
-   // TODO - Do we need these?
-   mapping[Words::MEETING_ORG_ACCEPT] = &Node::HandleNoneMessage;
-   mapping[Words::MEETING_NEW_ORG_PROBE] = &Node::HandleNoneMessage;
-   mapping[Words::MEETING_NEW_ORG] = &Node::HandleNoneMessage;
-   mapping[Words::MEETING_PARTC_ACK] = &Node::HandleNoneMessage;
+//   TODO - Do we need these?
+//   mapping[Words::MEETING_ORG_ACCEPT] = Node::HandleNoneMessage;
+//   mapping[Words::MEETING_NEW_ORG_PROBE] = Node::HandleNoneMessage;
+//   mapping[Words::MEETING_NEW_ORG] = Node::HandleNoneMessage;
+//   mapping[Words::MEETING_PARTC_ACK] = Node::HandleNoneMessage;
+   return;
 }
 
 void Node::set_manager(Manager *m) {
@@ -97,6 +99,8 @@ void Node::broadcast(Message msg) {
 // --- Core Logic ---
 //
 void Node::start_event_loop() {
+   LOG("Starting event loop.");
+
    Message msg;
    manager_->start();
 
@@ -104,7 +108,10 @@ void Node::start_event_loop() {
 
       if (this->get(&msg))
          consume(msg);
-
+      else if (meeting_state_ == MeetingState::IDLE) {
+         ask_for_resource();
+         sleep(1);
+      }
    }
 }
 
@@ -134,11 +141,9 @@ bool Node::accept(Message &msg) {
 }
 
 void Node::handle(Message msg) {
-   comm_func_map_t::iterator x = this->mapping.find(msg.word);
-
-   if (x != mapping.end()) {
-      (*(x->second))(msg);
-   }
+   comm_method fp = this->comm_func_map_t[msg.word];
+   LOG("%s", EnumStrings[msg.word]);
+   return (this->*fp)(msg);
 }
 
 //
@@ -146,7 +151,6 @@ void Node::handle(Message msg) {
 //
 void Node::invite_participants() {
    if (this->meeting_state_ == MeetingState::IDLE) {
-      LOG("Inviting participants...");
 
       this->meeting_state_ = MeetingState::MASTER_ORG;
 
@@ -154,16 +158,36 @@ void Node::invite_participants() {
       this->invitees_.insert(neighbours_.begin(), neighbours_.end());
       this->invitees_.insert(parent_);
 
+      LOG("Inviting participants...");
+      cout << "Invitees count: " << this->invitees_.size() << endl;
+
       for (auto id : this->invitees_) {
          new_message(id, MEETING_INVITE);
       }
+   } else {
+      LOG("Meeting state not idle!");
    }
 }
 
 void Node::ask_for_resource() {
-   assert(resource_count_ == 0);
-   LOG("I need resource. Please propagate this to everyone!");
-   new_message(ALL, Words::RESOURCE_REQUEST);
+   if (resource_count_ == 0 && resource_state_ != ResourceState::WAITING) {
+      LOG("I need resource. Please propagate this to everyone!");
+      resource_state_ = ResourceState::WAITING;
+      new_message(ALL, Words::RESOURCE_REQUEST);
+   } else if (resource_count_ > 0 && resource_state_ != ResourceState::IDLE) {
+      LOG("I've got resource!");
+      ask_for_acceptance();
+   }
+}
+
+void Node::ask_for_acceptance() {
+   if (parent_) {
+      LOG("Asking for acceptance");
+      new_message(parent_, MEETING_ACCEPTANCE_REQUEST);
+   } else {
+      LOG("I'm tree master, accepting");
+      meet();
+   }
 }
 
 void Node::try_start_meeting() {
@@ -176,6 +200,14 @@ void Node::try_start_meeting() {
          for (auto id : this->invitees_) {
             new_message(id, MEETING_START);
          }
+
+         sleep(1);
+
+         LOG("Meeting is over!");
+
+         for (auto id : this->invitees_) {
+            new_message(id, MEETING_END);
+         }
       } else {
          LOG("Not enough participants to start meeting, canceling...");
 
@@ -187,8 +219,8 @@ void Node::try_start_meeting() {
 }
 
 void Node::meet() {
-   LOG("Received resource, let's invite guests.");
-   resource_state_ = ResourceState::IDLE;
+   LOG("Meet!");
+   resource_state_ = ResourceState::LOCKED;
    this->invite_participants();
 }
 
@@ -199,40 +231,38 @@ void Node::HandleNoneMessage(Message msg) {
    LOG("FATAL: UNHANDLED BEHAVIOR");
 }
 
-void Node::HandleMeetingAccept(Message msg) {
+void Node::HandleMeetingInvitationAccept(Message msg) {
    this->participants_.insert(msg.sender);
    awaiting_response_ -= 1;
    try_start_meeting();
 }
 
-void Node::HandleMeetingDecline(Message msg) {
+void Node::HandleMeetingInvitationDecline(Message msg) {
    awaiting_response_ -= 1;
    try_start_meeting();
 }
 
 void Node::HandleMeetingInvitiation(Message msg) {
-   if (time_penalty_ > 0)
+   if (time_penalty_ > 0) {
       new_message(msg.sender, Words::MEETING_DECLINE);
+   }
 
    if (meeting_state_ == MeetingState::IDLE) {
       new_message(msg.sender, Words::MEETING_ACCEPT);
       meeting_state_ = MeetingState::WAITING;
    }
-
-   if (meeting_state_ == MeetingState::MASTER_ORG) {
-      meeting_state_ = MeetingState::SLAVE_ORG;
-   }
 }
 
 void Node::HandleMeetingCancel(Message msg) {
    meeting_state_ = MeetingState::IDLE;
-   this->invitees_.clear();
-
-   // TODO remove participants and other things?
 }
 
 void Node::HandleMeetingStart(Message msg) {
+   meeting_state_ = MeetingState::LOCKED;
+}
 
+void Node::HandleMeetingEnd(Message msg) {
+   meeting_state_ = MeetingState::IDLE;
 }
 
 //
@@ -251,7 +281,18 @@ void Node::HandleResourceRequest(Message msg) {
          LOG("Send a response");
       }
    } else {
-      // TODO: What else?
+      LOG("Don't have resource, sorry, forwarding");
+
+      set<int> fwds;
+      fwds.insert(neighbours_.begin(), neighbours_.end());
+      fwds.insert(parent_);
+
+      LOG("Asking for resource...");
+
+      for (auto id : this->invitees_) {
+         new_message(id, RESOURCE_REQUEST, )
+      }
+
    }
 }
 
@@ -280,7 +321,7 @@ void Node::HandleResourceDenial(Message msg) {
 
 void Node::HandleResourceDelivery(Message msg) {
    resource_count_ += 1;
-   meet();
+   ask_for_acceptance();
 }
 
 //

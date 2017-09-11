@@ -22,9 +22,6 @@ enum class MeetingState {
     SLAVE_ORG // Meeting participant - TODO: Difference between Locked?
 };
 
-typedef void (Node::*comm_metod)(Message);
-
-typedef std::map<Words, comm_metod> comm_func_map_t;
 
 class Node {
 public:
@@ -32,6 +29,9 @@ public:
     Node();
     Node(int ID);
     Node(int *buffer);
+
+    typedef void (Node::*comm_method)(Message);
+    std::map<Words, comm_method> comm_func_map_t;
 
     // Identity
     int32_t ID_;    // ID
@@ -42,9 +42,6 @@ public:
     set<int32_t> neighbours_;
     set<int32_t> children_;
     set<int> invitees_;
-
-    // Word <-> Handler function mapping
-    comm_func_map_t mapping;
 
     // Serialization
     pair<int, int *> serialize();
@@ -92,18 +89,19 @@ public:
 private:
     void try_start_meeting(); // After receiving a response from Invitee, check if everyone already responded. If true, start meeting
     void invite_participants(); // After getting permission, invites participants
-    void meet(); // TODO - ?
+    void meet();
     void ask_for_resource(); // Asks someone higher in the hierarchy for permission to organize meeting
+    void ask_for_acceptance();
 
     void HandleMeetingInvitiation(Message msg);
 
-    void HandleMeetingAccept(Message msg);
+    void HandleMeetingInvitationAccept(Message msg);
 
     void HandleNoneMessage(Message msg);
 
     void HandleMeetingCancel(Message msg);
 
-    void HandleMeetingDecline(Message msg);
+    void HandleMeetingInvitationDecline(Message msg);
 
     void HandleMeetingStart(Message msg);
 
@@ -127,7 +125,9 @@ private:
 
     void HandleMeetingAcceptanceDelivery(Message msg);
 
-    long initialize_mapping();
+    void initialize_mapping();
+
+    void HandleMeetingEnd(Message msg);
 };
 
 // Logging Helpers
@@ -137,5 +137,6 @@ private:
                              "msg  :: " msg "\n"  \
                              DASH,                \
                              this->ID_, ##__VA_ARGS__)
+
 
 #endif //PR_NODE_H
