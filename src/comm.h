@@ -19,7 +19,7 @@ class Manager {
 unique_ptr<mutex> _incoming_queue_mutex = nullptr; // mutex na kolejkę wiadomości przychodzących
 unique_ptr<mutex> _outgoing_queue_mutex = nullptr; // mutex na kolejkę wiadomości wychodzących
 
-unique_ptr<thread> _sender_thread = nullptr;   // wątek obsługujący kolejkę wiadomości wychodzących
+unique_ptr<thread> _sender_thread   = nullptr; // wątek obsługujący kolejkę wiadomości wychodzących
 unique_ptr<thread> _reciever_thread = nullptr; // wątek obsługujący kolejkę wiadomości przychodzących
 
 public:

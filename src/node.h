@@ -21,7 +21,7 @@ enum class MeetingState {
     WAITING,    // Waiting for response (meeting start or decline)
     LOCKED,     // Meeting in progress
     MASTER_ORG, // Meeting organizer
-    SLAVE_ORG   // Meeting participant - TODO: Difference between Locked?
+    // SLAVE_ORG   // Meeting participant - TODO: Difference between Locked?
 };
 
 

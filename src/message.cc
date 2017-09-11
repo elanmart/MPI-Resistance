@@ -11,7 +11,7 @@ int64_t identifier(Message &m) {
 }
 
 
-Message  create_message(int msg_number, int sender, int destination,
+Message create_message(int msg_number, int sender, int destination,
                         Words word, int payload[]) {
 
    auto timestamp = (int) time(NULL);
