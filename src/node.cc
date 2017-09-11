@@ -103,15 +103,11 @@ void Node::start_event_loop() {
 
    while (not STOP_) {
 
-      if (this->get(&msg))
+      if (this->get(&msg)) {
          consume(msg);
-      else if (meeting_state_ == MeetingState::IDLE) {
+      } else if (meeting_state_ == MeetingState::IDLE) {
          if (rand() % 3 == 0) {
-            LOG("Let's organize a meeting!");
-            meeting_state_ = MeetingState::MASTER_ORG;
-
-            ask_for_resource();
-            sleep(1);
+            initialize_meeting_procedure();
          }
       }
    }
@@ -151,7 +147,17 @@ void Node::handle(Message msg) {
 //
 // --- Abilities ---
 //
+void Node::initialize_meeting_procedure() {
+   LOG("Let's organize a meeting!");
+   meeting_state_ = MeetingState::MASTER_ORG;
+
+   ask_for_resource();
+   sleep(1);
+}
+
 void Node::invite_participants() {
+   LOG("Inviting participants");
+
    if (this->meeting_state_ == MeetingState::MASTER_ORG) {
       this->invitees_.insert(children_.begin(), children_.end());
       this->invitees_.insert(neighbours_.begin(), neighbours_.end());
@@ -170,24 +176,34 @@ void Node::invite_participants() {
 }
 
 void Node::ask_for_resource() {
-   if (resource_count_ == 0 && resource_state_ != ResourceState::WAITING) {
+   assert(resource_state_ != ResourceState::WAITING
+          && "Resource requested in an invalid state. Make sure your in IDLE if you want to organize a meeting");
+
+   if (resource_count_ == 0) {
       LOG("I need resource. Please propagate this to everyone!");
       resource_state_ = ResourceState::WAITING;
       send_new_message(ALL, Words::RESOURCE_REQUEST);
+
    } else if (resource_count_ > 0 && resource_state_ != ResourceState::IDLE) {
       LOG("I've got resource, no need to ask.");
-      ask_for_acceptance();
+      on_resource_available();
    }
 }
 
 void Node::ask_for_acceptance() {
    if (parent_) {
       LOG("Asking for acceptance");
-      send_new_message(parent_, MEETING_ACCEPTANCE_REQUEST);
+      send_new_message(parent_, Words::MEETING_ACCEPTANCE_REQUEST);
    } else {
       LOG("I'm tree master, accepting!");
       meet();
    }
+}
+
+void Node::on_resource_available() {
+   resource_state_ = ResourceState::LOCKED;  // make sure noone steals our resource while we're awaiting acceptance.
+
+   ask_for_acceptance();
 }
 
 void Node::try_start_meeting() {
@@ -222,8 +238,24 @@ void Node::try_start_meeting() {
 
 void Node::meet() {
    LOG("Meet!");
-   resource_state_ = ResourceState::LOCKED;
    this->invite_participants();
+}
+
+void Node::resource_answer(int id) {
+   LOG("Sending resource to %d", id);
+
+   resource_state_ = ResourceState::LOCKED;
+   send_new_message(id, Words::RESOURCE_ANSWER);
+}
+
+void Node::perhaps_next_answer() {
+   if ((resource_count_ > 0) and (resource_answer_queue_.size() > 0)) {
+      LOG("I have more resource left and there are people waiting. Sending next");
+
+      auto id = resource_answer_queue_.front();
+      resource_answer_queue_.pop(); // lol c++
+      resource_answer(id);
+   }
 }
 
 //
@@ -276,55 +308,64 @@ void Node::HandleMeetingEnd(Message msg) {
 // ----- Resource handling
 //
 void Node::HandleResourceRequest(Message msg) {
-   if (resource_count_ > 0) {
-      LOG("Handling resource request");
+   LOG("Handling resource request");
 
-      if (resource_state_ == ResourceState::LOCKED) {
-         //todo: put to a queue of awaiting requests.
-      } else if (resource_state_ == ResourceState::IDLE) {
-         resource_state_ = ResourceState::LOCKED;
-         send_new_message(msg.sender, Words::RESOURCE_ANSWER);
-
-         LOG("Yes, I have idle resource, responding...");
-      }
+   if ((resource_count_ > 0) and (resource_state_ == ResourceState::IDLE)) {
+      LOG("Yes, I have idle resource, responding...");
+      resource_answer(msg.sender);
    } else {
-      LOG("Don't have resource, sorry, forwarding");
+      LOG("Resource unavailable at the moment. I'll ping you when I get one");
 
-      set<int> fwds;
-      fwds.insert(neighbours_.begin(), neighbours_.end());
-      fwds.insert(parent_);
+      if (resource_state_ == ResourceState::LOCKED)
+         LOG("I've got a LOCKED resource");
+      if (resource_state_ == ResourceState::WAITING)
+         LOG("I'm waiting for resource myself");
+      if (resource_count_ == 0)
+         LOG("I dont have any resource");
 
-      for (auto id : fwds) {
-         forward(msg, id);
-      }
+      resource_answer_queue_.push(msg.sender);
    }
 }
 
 void Node::HandleResourceAnswer(Message msg) {
+   assert(msg.destination == this->ID_
+          && "We are handling a resource answer that is not meant for us...");
+
    if (resource_state_ == ResourceState::WAITING) {
-//      resource_state_ = ResourceState::WAITING;
+      LOG("Accepted a resource from %d", msg.sender);
+      resource_state_ = ResourceState::LOCKED;
       send_new_message(msg.sender, Words::RESOURCE_ACK);
-      LOG("Accepted a resource of %d", msg.sender);
+
    } else {
+      LOG("Denied a resource from %d", msg.sender);
       send_new_message(msg.sender, Words::RESOURCE_DENIED);
-      LOG("Denied a resource of %d", msg.sender);
    }
 }
 
 void Node::HandleResourceAck(Message msg) {
+   LOG("Someone wanted my resource. Sending to %d", msg.sender);
+
+   assert(resource_count_ > 0
+          && "Something bad happened: we've unexpectedly lost a resource");
+
    resource_count_ -= 1;
+   resource_state_ = ResourceState::IDLE;
    send_new_message(msg.sender, Words::RESOURCE_SENT);
-   LOG("Someone wanted my resource. Sent");
+
+   perhaps_next_answer();
 }
 
 void Node::HandleResourceDenial(Message msg) {
-   resource_state_ = ResourceState::IDLE;
    LOG("Someone didn't want my resource.");
+
+   resource_state_ = ResourceState::IDLE;
+   perhaps_next_answer();
 }
 
 void Node::HandleResourceDelivery(Message msg) {
    resource_count_ += 1;
-   ask_for_acceptance();
+
+   on_resource_available();
 }
 
 //

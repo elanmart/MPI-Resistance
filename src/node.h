@@ -61,6 +61,7 @@ public:
     double percentage_threshold_;
 
     set<int> participants_;
+    queue<int> resource_answer_queue_;
     MeetingState meeting_state_;
     ResourceState resource_state_;
 
@@ -91,11 +92,15 @@ public:
     bool STOP_;
 
 private:
-    void try_start_meeting(); // After receiving a response from Invitee, check if everyone already responded. If true, start meeting
+    void initialize_meeting_procedure();
+    void try_start_meeting();   // After receiving a response from Invitee, check if everyone already responded. If true, start meeting
     void invite_participants(); // After getting permission, invites participants
     void meet();
-    void ask_for_resource(); // Asks someone higher in the hierarchy for permission to organize meeting
-    void ask_for_acceptance();
+    void ask_for_resource();    // Asks anyone for resource
+    void ask_for_acceptance();  // Asks someone higher in the hierarchy for permission to organize meeting
+    void on_resource_available();
+    void resource_answer(int id);       // Answer a process requesting a resource. This may happen in several places
+    void perhaps_next_answer();
 
     void HandleMeetingInvitiation(Message msg);
 
