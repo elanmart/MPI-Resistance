@@ -375,6 +375,8 @@ void Node::HandleResourceDenial(__unsued Message msg) {
       ask_for_resource();
 
    } else {
+      LOG("I'll just try to asnwer to any other people waiting for the resource");
+
       resource_state_ = ResourceState::IDLE;
       perhaps_next_answer();
    }
