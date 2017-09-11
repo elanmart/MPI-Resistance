@@ -15,6 +15,13 @@ cd build
 killall PR && mpirun -np 3 ./PR
 ```
 
+It is recommended to run:
+```bash
+killall PR
+```
+
+before running any experiments.
+
 Opis src:		
 * `comm.h` -- zawiera klasę Manager. Każdy wątek ma swój Manager object, który zajmuje się komunikajcą po MPI.
             Zawiera kolejki wiadomości odebranych i tych do wysłania. 
