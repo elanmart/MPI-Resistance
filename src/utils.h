@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+#define __unsued __attribute__((unused))
+
 /*
  * zwraca true jeżeli zbiór zawiera item.
  */

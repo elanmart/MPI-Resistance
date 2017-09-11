@@ -163,7 +163,7 @@ void Node::invite_participants() {
       this->invitees_.insert(neighbours_.begin(), neighbours_.end());
       this->invitees_.insert(parent_);
 
-      awaiting_response_ = this->invitees_.size();
+      awaiting_response_ = (int) (this->invitees_.size());
 
       LOG("Inviting participants... Count: %d", awaiting_response_);
 
@@ -261,7 +261,7 @@ void Node::perhaps_next_answer() {
 //
 // ----- Invitation Handlers -----
 //
-void Node::HandleNoneMessage(Message msg) {
+void Node::HandleNoneMessage(__unsued Message msg) {
    LOG("FATAL: UNHANDLED BEHAVIOR");
 }
 
@@ -271,7 +271,7 @@ void Node::HandleMeetingInvitationAccept(Message msg) {
    try_start_meeting();
 }
 
-void Node::HandleMeetingInvitationDecline(Message msg) {
+void Node::HandleMeetingInvitationDecline(__unsued Message msg) {
    awaiting_response_ -= 1;
    try_start_meeting();
 }
@@ -292,15 +292,15 @@ void Node::HandleMeetingInvitiation(Message msg) {
    }
 }
 
-void Node::HandleMeetingCancel(Message msg) {
+void Node::HandleMeetingCancel(__unsued Message msg) {
    meeting_state_ = MeetingState::IDLE;
 }
 
-void Node::HandleMeetingStart(Message msg) {
+void Node::HandleMeetingStart(__unsued Message msg) {
    meeting_state_ = MeetingState::LOCKED;
 }
 
-void Node::HandleMeetingEnd(Message msg) {
+void Node::HandleMeetingEnd(__unsued Message msg) {
    meeting_state_ = MeetingState::IDLE;
 }
 
@@ -355,14 +355,14 @@ void Node::HandleResourceAck(Message msg) {
    perhaps_next_answer();
 }
 
-void Node::HandleResourceDenial(Message msg) {
+void Node::HandleResourceDenial(__unsued Message msg) {
    LOG("Someone didn't want my resource.");
 
    resource_state_ = ResourceState::IDLE;
    perhaps_next_answer();
 }
 
-void Node::HandleResourceDelivery(Message msg) {
+void Node::HandleResourceDelivery(__unsued Message msg) {
    resource_count_ += 1;
 
    on_resource_available();
@@ -388,23 +388,23 @@ void Node::HandleMeetingAcceptanceRequest(Message msg) {
    }
 }
 
-void Node::HandleMeetingAcceptanceAnswer(Message msg) {
+void Node::HandleMeetingAcceptanceAnswer(__unsued Message msg) {
    LOG("Got acceptance!");
    meet();
 }
 
-void Node::HandleMeetingAcceptanceAck(Message msg) {
+void Node::HandleMeetingAcceptanceAck(__unsued Message msg) {
 
 }
 
-void Node::HandleMeetingAcceptanceDenial(Message msg) {
+void Node::HandleMeetingAcceptanceDenial(__unsued Message msg) {
    LOG("Acceptor denied meeting, cancelling...");
    meeting_state_ = MeetingState::IDLE;
    resource_state_ = ResourceState::IDLE;
 }
 
 // TODO - whole behavior
-void Node::HandleMeetingAcceptanceDelivery(Message msg) {
+void Node::HandleMeetingAcceptanceDelivery(__unsued Message msg) {
 
 }
 
