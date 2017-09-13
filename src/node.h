@@ -143,7 +143,7 @@ private:
 
 // Logging Helpers
 #define DASH "=====================================\n"
-#define LOG(msg, ...) printf(DASH                 \
+#define NODE_LOG(msg, ...) printf(DASH                 \
                              "Node :: %d     \n"  \
                              "msg  :: " msg "\n",  \
                              this->ID_, ##__VA_ARGS__)
