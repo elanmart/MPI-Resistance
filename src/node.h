@@ -131,12 +131,6 @@ private:
 
     void HandleMeetingAcceptanceAnswer(Message msg);
 
-    void HandleMeetingAcceptanceAck(Message msg);
-
-    void HandleMeetingAcceptanceDenial(Message msg);
-
-    void HandleMeetingAcceptanceDelivery(Message msg);
-
     void initialize_mapping();
 
     void HandleMeetingEnd(Message msg);

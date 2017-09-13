@@ -32,11 +32,8 @@ void Node::initialize_mapping() {
    comm_func_map_t[Words::RESOURCE_DENIED] = &Node::HandleResourceDenial;
    comm_func_map_t[Words::RESOURCE_SENT] = &Node::HandleResourceDelivery;
 
-   comm_func_map_t[Words::MEETING_ACCEPTANCE_REQUEST] = &Node::HandleMeetingAcceptanceRequest; // TODO
-   comm_func_map_t[Words::MEETING_ACCEPTANCE_ANSWER] = &Node::HandleMeetingAcceptanceAnswer; // TODO
-   comm_func_map_t[Words::MEETING_ACCEPTANCE_ACK] = &Node::HandleMeetingAcceptanceAck; // TODO
-   comm_func_map_t[Words::MEETING_ACCEPTANCE_DENIED] = &Node::HandleMeetingAcceptanceDenial; // TODO
-   comm_func_map_t[Words::MEETING_ACCEPTANCE_SENT] = &Node::HandleMeetingAcceptanceDelivery; // TODO
+   comm_func_map_t[Words::MEETING_ACCEPTANCE_REQUEST] = &Node::HandleMeetingAcceptanceRequest;
+   comm_func_map_t[Words::MEETING_ACCEPTANCE_ANSWER] = &Node::HandleMeetingAcceptanceAnswer;
 
    comm_func_map_t[Words::MEETING_INVITE] = &Node::HandleMeetingInvitiation;
    comm_func_map_t[Words::MEETING_ACCEPT] = &Node::HandleMeetingInvitationAccept;
@@ -169,10 +166,12 @@ void Node::invite_participants() {
    NODE_LOG("Inviting participants");
 
    if (this->meeting_state_ == MeetingState::MASTER_ORG) {
+      NODE_LOG("Size before clear: %lu, neighbours: %lu, children: %lu", this->invitees_.size(), this->neighbours_.size(), this->children_.size());
       this->invitees_.clear();
+
       this->invitees_.insert(children_.begin(), children_.end());
       this->invitees_.insert(neighbours_.begin(), neighbours_.end());
-      if (parent_ != 1) {
+      if (parent_ != -1) {
          this->invitees_.insert(parent_);
       }
 
@@ -427,20 +426,6 @@ void Node::HandleMeetingAcceptanceAnswer(__unsued Message msg) {
    meet();
 }
 
-void Node::HandleMeetingAcceptanceAck(__unsued Message msg) {
-
-}
-
-void Node::HandleMeetingAcceptanceDenial(__unsued Message msg) {
-   NODE_LOG("Acceptor denied meeting, cancelling...");
-   meeting_state_ = MeetingState::IDLE;
-   resource_state_ = ResourceState::IDLE;
-}
-
-// TODO - whole behavior
-void Node::HandleMeetingAcceptanceDelivery(__unsued Message msg) {
-
-}
 
 //
 // --- Serialization Helpers
