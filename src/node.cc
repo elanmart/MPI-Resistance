@@ -150,7 +150,7 @@ bool Node::accept(Message &msg) {
 
 void Node::handle(Message msg) {
    comm_method fp = this->comm_func_map_t[msg.word];
-   NODE_LOG("handle triggered for: %s", EnumStrings[msg.word]);
+   NODE_LOG("handle triggered for: %s %d", EnumStrings[msg.word], msg.word);
    return (this->*fp)(msg);
 }
 
@@ -169,9 +169,12 @@ void Node::invite_participants() {
    NODE_LOG("Inviting participants");
 
    if (this->meeting_state_ == MeetingState::MASTER_ORG) {
+      this->invitees_.clear();
       this->invitees_.insert(children_.begin(), children_.end());
       this->invitees_.insert(neighbours_.begin(), neighbours_.end());
-      this->invitees_.insert(parent_);
+      if (parent_ != 1) {
+         this->invitees_.insert(parent_);
+      }
 
       awaiting_response_ = (int) (this->invitees_.size());
 
@@ -229,7 +232,7 @@ void Node::try_start_meeting() {
       if (participants_.size() >= floor(this->invitees_.size() * percentage_threshold_)) {
          NODE_LOG("Sending start notify...");
          // Send message about started meeting
-         for (auto id : this->invitees_) {
+         for (auto id : this->participants_) {
             send_new_message(id, MEETING_START);
          }
 
@@ -237,20 +240,27 @@ void Node::try_start_meeting() {
 
          NODE_LOG("Meeting is over!");
 
-         for (auto id : this->invitees_) {
+         for (auto id : this->participants_) {
             send_new_message(id, MEETING_END);
          }
 
-         perhaps_next_answer();
+         this->participants_.clear();
+
       } else {
          NODE_LOG("Not enough participants to start meeting, canceling...");
 
-         for (auto id : this->invitees_) {
+         for (auto id : this->participants_) {
             send_new_message(id, MEETING_CANCEL);
          }
       }
+
+      perhaps_next_answer();
    } else {
       NODE_LOG("Awaiting response from %d invitees...", awaiting_response_);
+
+      if (awaiting_response_ < 0) {
+         assert(awaiting_response_ < 0 && "Awaiting negative amount of invitees.");
+      }
    }
 }
 
@@ -285,11 +295,13 @@ void Node::HandleNoneMessage(__unsued Message msg) {
 
 void Node::HandleMeetingInvitationAccept(Message msg) {
    this->participants_.insert(msg.sender);
+   NODE_LOG("Accept from %d", msg.sender);
    awaiting_response_ -= 1;
    try_start_meeting();
 }
 
-void Node::HandleMeetingInvitationDecline(__unsued Message msg) {
+void Node::HandleMeetingInvitationDecline(Message msg) {
+   NODE_LOG("Accept from %d", msg.sender);
    awaiting_response_ -= 1;
    try_start_meeting();
 }
