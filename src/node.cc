@@ -285,6 +285,7 @@ void Node::perhaps_next_answer() {
       resource_answer_queue_.pop(); // lol c++
       resource_answer(id);
    } else {
+      resource_state_ = ResourceState::IDLE;
       NODE_LOG("Resource count: %d, Queue size: %lu", resource_count_, resource_answer_queue_.size());
    }
 }
