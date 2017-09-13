@@ -7,11 +7,11 @@
 
 enum Words {
     // Resource acquisition
-    RESOURCE_REQUEST, // Sent by Node which wants resource
-    RESOURCE_ANSWER,   // If I have a resource, I respond with RESOURCE_REQUEST
-    RESOURCE_ACK,      // If I still really want a resource, I respond with RESOURCE_ANSWER
-    RESOURCE_SENT,     // Confirming dispatching RESOURCE_ACK
-    RESOURCE_DENIED,   // Reply to RESOURCE_ANSWER if I don't need that resource anymore
+    RESOURCE_REQUEST = 0, // Sent by Node which wants resource
+    RESOURCE_ANSWER = 1,   // If I have a resource, I respond with RESOURCE_REQUEST
+    RESOURCE_ACK = 2,      // If I still really want a resource, I respond with RESOURCE_ANSWER
+    RESOURCE_SENT = 3,     // Confirming dispatching RESOURCE_ACK
+    RESOURCE_DENIED = 4,   // Reply to RESOURCE_ANSWER if I don't need that resource anymore
 
 //   Words used for complex soluton, skipping for now
 //   MEETING_ACCEPTANCE_ASK, // Broadcastowe zapytanie do wyzszych o to czy w ogole maja token akceptora
@@ -23,9 +23,6 @@ enum Words {
     // Logic similar to resource acquisition
     MEETING_ACCEPTANCE_REQUEST,
     MEETING_ACCEPTANCE_ANSWER,
-    MEETING_ACCEPTANCE_ACK,
-    MEETING_ACCEPTANCE_DENIED,
-    MEETING_ACCEPTANCE_SENT,
 
     // Organizing a meeting
     MEETING_INVITE,
@@ -52,9 +49,6 @@ static const char * EnumStrings[] = {
 
       "MEETING_ACCEPTANCE_REQUEST",
       "MEETING_ACCEPTANCE_ANSWER",
-      "MEETING_ACCEPTANCE_ACK",
-      "MEETING_ACCEPTANCE_DENIED",
-      "MEETING_ACCEPTANCE_SENT",
 
       "MEETING_INVITE",
       "MEETING_ACCEPT",

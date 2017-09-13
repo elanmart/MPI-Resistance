@@ -243,8 +243,6 @@ void Node::try_start_meeting() {
             send_new_message(id, MEETING_END);
          }
 
-         this->participants_.clear();
-
       } else {
          NODE_LOG("Not enough participants to start meeting, canceling...");
 
@@ -253,7 +251,11 @@ void Node::try_start_meeting() {
          }
       }
 
+      meeting_state_ = MeetingState::IDLE;
+      this->participants_.clear();
+
       perhaps_next_answer();
+
    } else {
       NODE_LOG("Awaiting response from %d invitees...", awaiting_response_);
 
@@ -282,6 +284,8 @@ void Node::perhaps_next_answer() {
       auto id = resource_answer_queue_.front();
       resource_answer_queue_.pop(); // lol c++
       resource_answer(id);
+   } else {
+      NODE_LOG("Resource count: %d, Queue size: %lu", resource_count_, resource_answer_queue_.size());
    }
 }
 
