@@ -62,6 +62,8 @@ static const char * EnumStrings[] = {
       "MEETING_CANCEL",
       "MEETING_START",
       "MEETING_END",
+
+      "NONE",
 };
 
 typedef struct _Message {

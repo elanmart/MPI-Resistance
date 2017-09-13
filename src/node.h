@@ -86,6 +86,7 @@ public:
     // message bookkeeping
     set<int64_t> msg_cache_; // Set of "seen messages"
     int msg_number_;         // Sequential number assigned to every new message
+    int operation_number_;
 
     // Main loop exec function, processes message and generates response
     void handle(Message msg);
@@ -145,8 +146,9 @@ private:
 #define DASH "=====================================\n"
 #define NODE_LOG(msg, ...) printf(DASH                 \
                              "Node :: %d     \n"  \
+                             "Operation :: %d     \n"  \
                              "msg  :: " msg "\n",  \
-                             this->ID_, ##__VA_ARGS__)
+                             this->ID_, this->operation_number_, ##__VA_ARGS__)
 
 
 #endif //PR_NODE_H
