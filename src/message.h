@@ -13,16 +13,12 @@ enum Words {
     RESOURCE_SENT = 3,     // Confirming dispatching RESOURCE_ACK
     RESOURCE_DENIED = 4,   // Reply to RESOURCE_ANSWER if I don't need that resource anymore
 
-//   Words used for complex soluton, skipping for now
-//   MEETING_ACCEPTANCE_ASK, // Broadcastowe zapytanie do wyzszych o to czy w ogole maja token akceptora
-//   MEETING_ACCEPTANCE_TIME_INFO, // powiadomeinie innych akceptorów o odebraniu prosby - maja sobie dopisac do kolejek priorytetowych
-//   MEETING_ACCEPTANCE_GRANT, // Zapytanie - "jak masz to daj pozwolenie"
-//   MEETING_ACCEPTANCE_RELEASE, // Zapytanie zawierające pozwolenie
-//   MEETING_ACCEPTANCE_DENIED, // Acceptor denied organizing a meeting
-
     // Logic similar to resource acquisition
     MEETING_ACCEPTANCE_REQUEST,
-    MEETING_ACCEPTANCE_ANSWER,
+    MEETING_ACCEPTANCE_REPORT,
+    MEETING_ACCEPTANCE_GRANTED,
+    MEETING_ACCEPTANCE_DENIED,
+    MEETING_ACCEPTANCE_FULFILLED,
 
     // Organizing a meeting
     MEETING_INVITE,
@@ -32,11 +28,6 @@ enum Words {
     MEETING_START,
     MEETING_END,
     MEETING_DONE,
-
-//    MEETING_ORG_ACCEPT,
-//    MEETING_NEW_ORG_PROBE,
-//    MEETING_NEW_ORG,
-//    MEETING_PARTC_ACK,
 
     NONE
 };
@@ -49,7 +40,7 @@ static const char * EnumStrings[] = {
       "RESOURCE_DENIED"
 
       "MEETING_ACCEPTANCE_REQUEST",
-      "MEETING_ACCEPTANCE_ANSWER",
+      "MEETING_ACCEPTANCE_GRANTED",
 
       "MEETING_INVITE",
       "MEETING_ACCEPT",

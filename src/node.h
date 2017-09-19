@@ -6,6 +6,7 @@
 #include "common.h"
 #include "comm.h"
 #include "utils.h"
+#include "ack_queue.h"
 
 class Manager; // todo: handle this;
 
@@ -27,6 +28,8 @@ enum class MeetingState {
 
 class Node {
 public:
+    void debug();
+
     // ctors
     Node();
     Node(int ID);
@@ -136,13 +139,19 @@ public:
 
     void HandleMeetingAcceptanceRequest(Message msg);
 
-    void HandleMeetingAcceptanceAnswer(Message msg);
+    void HandleMeetingAcceptanceGranted(Message msg);
 
     void HandleMeetingEnd(Message msg);
 
-    void debug();
-
     void HandleMeetingDone(Message msg);
+
+    void HandleAcceptanceReport(Message msg);
+
+    void HandleAcceptanceDenied(Message msg);
+
+    void HandleAcceptanceFullfilled(Message msg);
+
+
 
     int get_answer_code();
 };
