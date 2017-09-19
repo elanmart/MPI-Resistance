@@ -11,18 +11,17 @@ class Manager; // todo: handle this;
 
 
 enum class ResourceState {
-    IDLE,    // Resource not used
-    WAITING, // Resource waiting for response
-    LOCKED,  // Resource being used
-    NEEDED,  // Resource available, but can't be used yet. TODO: rename
+    IDLE,                                                             // Resource not used
+    WAITING,                                                          // Resource waiting for response
+    LOCKED,                                                           // Resource being used
+    NEEDED,                                                           // Resource available, but can't be used yet.
 };
 
 enum class MeetingState {
-    IDLE,       // Not participating, can join
-    WAITING,    // Waiting for response (meeting start or decline)
-    LOCKED,     // Meeting in progress
-    MASTER_ORG, // Meeting organizer
-    // SLAVE_ORG   // Meeting participant - TODO: Difference between Locked?
+    IDLE,                                                             // Not participating, can join
+    WAITING,                                                          // Waiting for response (meeting start or decline)
+    LOCKED,                                                           // Meeting in progress
+    MASTER_ORG,                                                       // Meeting organizer
 };
 
 
@@ -33,79 +32,80 @@ public:
     Node(int ID);
     Node(int *buffer);
 
-    typedef void (Node::*comm_method)(Message);
-    std::map<Words, comm_method> comm_func_map_t;
-
     // Identity
-    int32_t ID_;    // ID
-    int32_t level_; // Depth in tree
-    bool is_acceptor_;
+    int32_t ID_;                                                      // ID
+    int32_t level_;                                                   // Depth in tree
+    int32_t is_acceptor_;
+
+    // Configuration variables
+    int resource_count_;
+    double percentage_threshold_;
 
     // Topology
     int32_t parent_;
     set<int32_t> neighbours_;
     set<int32_t> children_;
-    set<int> invitees_;
-
-    // Serialization
-    pair<int, int *> serialize();
-
-    void deserialize(int *buffer);
 
     // Communication interface
-    Manager *manager_ = nullptr;  // MPI Interface. Contains send and receive queues
-    void set_manager(Manager *m); // Sets up a manager
+    Manager *manager_ = nullptr;                                        // MPI Interface. Contains send and receive queues
+    void set_manager(Manager *m);                                       // Sets up a manager
 
-    // Configuration variables
-    int resource_count_;
-    int awaiting_response_;
-    int time_penalty_;
-    double percentage_threshold_;
-
+    // Node States
+    MeetingState  meeting_state_;
+    ResourceState resource_state_;
+    set<int> invitees_;
     set<int> participants_;
     queue<int> resource_answer_queue_;
-    MeetingState meeting_state_;
-    ResourceState resource_state_;
-
-    void start_event_loop(); // Initializes main event loop
-
-    void send_new_message(int destination, Words w, int *payload = nullptr);
-
-    void _send(Message msg);
-
-    bool get(Message *msg);
-
-    void broadcast(Message msg); // Sends a message to all neighbours, children and parent
-    bool accept(Message &msg);   // Checks if we haven't received that msg already
-    void consume(Message &msg);  // Checks if message should be consumed by us or forwarded
-    void forward(Message msg, int target);  // Sends message to it's neighbours
-
-    void send_to(Message msg, set<int> recipients); // Sends message to a set of receipents
-    void send_to(Message msg, int dest); // Sends message to destination
+    int awaiting_response_;
+    int time_penalty_;
 
     // message bookkeeping
-    set<int64_t> msg_cache_; // Set of "seen messages"
-    int msg_number_;         // Sequential number assigned to every new message
     uint64_t T_;
+    set<int64_t> msg_cache_;                                             // Set of "seen messages"
+    int msg_number_;                                                     // Sequential number assigned to every new message
     int operation_number_;
 
-    // Main loop exec function, processes message and generates response
-    void handle(Message msg);
+    // Message handlers map
+    typedef void (Node::*comm_method)(Message);
+    std::map<Words, comm_method> comm_func_map_t;
 
     // synchronization
     bool STOP_;
 
-private:
+    // main event loop
+    void start_event_loop();                                             // Initializes main event loop
+
+    // message passing
+    bool get(Message *msg);
+    void send_new_message(int destination, Words w, int *payload = nullptr);
+    void broadcast(Message msg);
+    void forward(Message msg, int target);                               // Sends message to it's neighbours
+    void send_to(Message msg, set<int> recipients);                      // Sends message to a set of receipents
+    void send_to(Message msg, int dest);                                 // Sends message to destination
+
+    // message handling
+    bool accept(Message &msg);                                           // Checks if we haven't received that msg already
+    void consume(Message &msg);                                          // Checks if message should be consumed by us or forwarded
+    void handle(Message msg);
+
+    // Serialization
+    pair<int, int *> serialize();
+    void deserialize(int *buffer);
+
+    // meetings
     void initialize_meeting_procedure();
-    void try_start_meeting();   // After receiving a response from Invitee, check if everyone already responded. If true, start meeting
-    void invite_participants(); // After getting permission, invites participants
+    void try_start_meeting();                                              // After receiving a response from Invitee, check if everyone already responded. If true, start meeting
+    void invite_participants();                                            // After getting permission, invites participants
     void meet();
-    void ask_for_resource();    // Asks anyone for resource
-    void ask_for_acceptance();  // Asks someone higher in the hierarchy for permission to organize meeting
+
+    // resource / ack acquisition
+    void ask_for_resource();                                               // Asks anyone for resource
+    void ask_for_acceptance();                                             // Asks someone higher in the hierarchy for permission to organize meeting
     void on_resource_available();
-    void resource_answer(int id);       // Answer a process requesting a resource. This may happen in several places
+    void resource_answer(int id);                                          // Answer a process requesting a resource. This may happen in several places
     void perhaps_next_answer();
 
+   // Message handlers
     void HandleMeetingInvitiation(Message msg);
 
     void HandleMeetingInvitationAccept(Message msg);

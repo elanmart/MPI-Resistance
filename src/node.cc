@@ -54,18 +54,6 @@ void Node::set_manager(Manager *m) {
 //
 // --- Communication Helper Functions ---
 //
-void Node::send_new_message(int destination, Words w, int *payload) {
-   msg_number_++;
-   auto msg = create_message(msg_number_, ID_, destination, w, payload);
-
-   _send(msg);
-}
-
-void Node::_send(Message msg) {
-   msg_cache_.insert(identifier(msg));
-   broadcast(msg);
-}
-
 bool Node::get(Message *msg) {
    auto msg_available = manager_->get(msg);
 
@@ -75,12 +63,17 @@ bool Node::get(Message *msg) {
    return msg_available;
 }
 
+void Node::send_new_message(int destination, Words w, int *payload) {
+   auto msg = create_message(msg_number_++, ID_, destination, w, payload);
+   msg_cache_.insert(identifier(msg));
 
-void Node::send_to(Message msg, int dest) {
-   T_ += 1;
-   msg.timestamp = T_;
+   broadcast(msg);
+}
 
-   manager_->put(msg, dest);
+void Node::broadcast(Message msg) {
+   send_to(msg, parent_);
+   send_to(msg, children_);
+   send_to(msg, neighbours_);
 }
 
 void Node::send_to(Message msg, set<int> recipients) {
@@ -88,10 +81,11 @@ void Node::send_to(Message msg, set<int> recipients) {
       send_to(msg, id);
 }
 
-void Node::broadcast(Message msg) {
-   send_to(msg, parent_);
-   send_to(msg, children_);
-   send_to(msg, neighbours_);
+void Node::send_to(Message msg, int dest) {
+   T_ += 1;
+   msg.timestamp = T_;
+
+   manager_->put(msg, dest);
 }
 
 void Node::forward(Message msg, int target) {
@@ -129,6 +123,17 @@ void Node::start_event_loop() {
    }
 }
 
+bool Node::accept(Message &msg) {
+   auto key = identifier(msg);
+
+   if (msg_cache_.find(key) != msg_cache_.end()) {
+      return false;
+   } else {
+      msg_cache_.insert(key);
+      return true;
+   }
+}
+
 void Node::consume(Message &msg) {
    if (not accept(msg))
       return;
@@ -143,21 +148,11 @@ void Node::consume(Message &msg) {
    }
 }
 
-bool Node::accept(Message &msg) {
-   auto key = identifier(msg);
-
-   if (msg_cache_.find(key) != msg_cache_.end()) {
-      return false;
-   } else {
-      msg_cache_.insert(key);
-      return true;
-   }
-}
-
 void Node::handle(Message msg) {
-   comm_method fp = this->comm_func_map_t[msg.word];
    NODE_LOG("handle triggered for: %s %d", EnumStrings[msg.word], msg.word);
-   return (this->*fp)(msg);
+
+   auto handler = comm_func_map_t[msg.word];
+   return (this->*handler)(msg);
 }
 
 //
@@ -448,16 +443,17 @@ pair<int, int *> Node::serialize() {
    int n_children = (int) children_.size();
    int n_neighbours = (int) neighbours_.size();
 
-   int n_items = 4 + 2 + n_children + n_neighbours;
+   int n_items = 5 + 2 + n_children + n_neighbours;
    int *buffer = new int[n_items];
 
    buffer[0] = ID_;
    buffer[1] = level_;
    buffer[2] = parent_;
    buffer[3] = resource_count_;
-   buffer[4] = n_children;
-   buffer[5] = n_neighbours;
-   int offset = 6;
+   buffer[4] = is_acceptor_;
+   buffer[5] = n_children;
+   buffer[6] = n_neighbours;
+   int offset = 7;
 
    for (auto item : children_)
       buffer[offset++] = item;
@@ -469,13 +465,14 @@ pair<int, int *> Node::serialize() {
 }
 
 void Node::deserialize(int *buffer) {
-   ID_ = buffer[0];
-   level_ = buffer[1];
-   parent_ = buffer[2];
-   resource_count_ = buffer[3];
-   int n_children = buffer[4];
-   int n_neighbours = buffer[5];
-   int offset = 6;
+   ID_              = buffer[0];
+   level_           = buffer[1];
+   parent_          = buffer[2];
+   resource_count_  = buffer[3];
+   is_acceptor_     = buffer[4];
+   int n_children   = buffer[5];
+   int n_neighbours = buffer[6];
+   int offset = 7;
 
    children_.clear();
    neighbours_.clear();
