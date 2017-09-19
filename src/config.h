@@ -18,7 +18,7 @@ public:
 
    int n_resources;      // ile risorsów w całym drzewie
 
-   float acceptor_proba; // jeszcze nie wiem
+   int n_acceptors;      // ile akceptorów w drzewie
    float resource_proba; // jeszcze nie wiem
 
    void parse_args(int argc, char** argv); // ciekawe co to robi

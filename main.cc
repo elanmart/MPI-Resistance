@@ -56,6 +56,12 @@ vector<Node> create_tree(Config &cfg) {
       nodes[randint(0, (int) nodes.size())].resource_count_ += 1;
    }
 
+   // acceptor token
+   nodes[0].is_acceptor_ = 1;
+   for (int i = 0; i < cfg.n_acceptors; ++i) {
+      nodes[randint(0, (int) nodes.size())].is_acceptor_ = 1;
+   }
+
    return nodes;
 }
 

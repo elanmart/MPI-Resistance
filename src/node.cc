@@ -3,14 +3,16 @@
 // --- ctors ---
 
 Node::Node() {
+   T_ = 0;
    level_ = 0;
    parent_ = -1;
    msg_number_ = 0;
+   is_acceptor_ = 0;
    resource_count_ = 0;
-   is_acceptor_ = rand() % 10 == 0; //10% chance to become acceptor
    resource_state_ = ResourceState::IDLE;
    meeting_state_ = MeetingState::IDLE;
    STOP_ = false;
+
    initialize_mapping();
 }
 
@@ -61,7 +63,6 @@ void Node::send_new_message(int destination, Words w, int *payload) {
    _send(msg);
 }
 
-
 void Node::_send(Message msg) {
    msg_cache_.insert(identifier(msg));
    broadcast(msg);
@@ -69,7 +70,7 @@ void Node::_send(Message msg) {
 
 bool Node::get(Message *msg) {
    auto msg_available = manager_->get(msg);
-   
+
    if (msg_available)
       T_ = max(msg->timestamp, T_);
 
@@ -440,7 +441,6 @@ void Node::HandleMeetingAcceptanceDenial(__unsued Message msg) {
    resource_state_ = ResourceState::IDLE;
 }
 
-// TODO - whole behavior
 void Node::HandleMeetingAcceptanceDelivery(__unsued Message msg) {
 
 }
