@@ -26,5 +26,41 @@ inline int randint(int low, int high) {
    return dist(rng);
 }
 
+// TIME PRIORITY QUEUE
+typedef pair<uint64_t, int> time_int_pair;
+
+bool pair_compare_by_first(time_int_pair left, time_int_pair right) {
+    return (left.first < right.first);
+};
+
+typedef priority_queue<
+        time_int_pair,
+        std::vector<time_int_pair>,
+        decltype(pair_compare_by_first)
+> T_priority_queue;
+
+
+// ACCEPTOR QUEUE
+typedef tuple<uint64_t, int, T_priority_queue> acceptor_queue_entry;
+
+bool tuple_compare_by_first(acceptor_queue_entry left, acceptor_queue_entry right) {
+   return (get<0>(left) < get<0>(right));
+};
+
+typedef priority_queue<
+        acceptor_queue_entry,
+        std::vector<acceptor_queue_entry>,
+        decltype(tuple_compare_by_first)
+> acceptor_queue_t;
+
+
+bool id_in_queue(int id, acceptor_queue_t queue) {
+   for (auto item : queue) {
+      if (get<1>(item) == id)
+         return true;
+   }
+   return false;
+}
+
 
 #endif //PR_UTILS_H

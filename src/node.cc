@@ -21,6 +21,7 @@ Node::Node() {
    is_acceptor_ = 0;
    resource_count_ = 0;
    operation_number_ = 0;
+   acceptance_queue_ = acceptor_queue_t(tuple_compare_by_first);
    awaiting_start_confirm_ = 0;
    resource_state_ = ResourceState::IDLE;
    meeting_state_ = MeetingState::IDLE;
@@ -476,20 +477,18 @@ void Node::HandleResourceDelivery(__unsued Message msg) {
 
 // ----- Meeting acceptance handler -----
 // TODO
+int Node::get_answer_code() {
+   return false;
+}
+
 void Node::HandleMeetingAcceptanceRequest(Message msg) {
    if (is_acceptor_) {
-      NODE_LOG("Acceptor here, accepting!");
+      NODE_LOG("Acceptor here, handling msg from %d", msg.sender);
+
+      int process_lvl  = msg.payload[0];
+      int n_processes  = msg.payload[1];
+
       send_new_message(msg.sender, MEETING_ACCEPTANCE_ANSWER);
-   } else {
-      set<int> fwds;
-      fwds.insert(neighbours_.begin(), neighbours_.end());
-      fwds.insert(parent_);
-
-      NODE_LOG("Forwarding acceptance request...");
-
-      for (auto id : fwds) {
-         forward(msg, id);
-      }
    }
 }
 

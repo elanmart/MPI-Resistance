@@ -70,6 +70,9 @@ public:
     typedef void (Node::*comm_method)(Message);
     std::map<Words, comm_method> comm_func_map_t;
 
+    // Acceptor queues
+    acceptor_queue_t acceptance_queue_;
+
     // synchronization
     bool STOP_;
 
@@ -140,6 +143,8 @@ public:
     void debug();
 
     void HandleMeetingDone(Message msg);
+
+    int get_answer_code();
 };
 
 // Logging Helpers
