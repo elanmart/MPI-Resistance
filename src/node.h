@@ -87,6 +87,7 @@ public:
     set<int64_t> msg_cache_; // Set of "seen messages"
     int msg_number_;         // Sequential number assigned to every new message
     uint64_t T_;
+    int operation_number_;
 
     // Main loop exec function, processes message and generates response
     void handle(Message msg);
@@ -131,12 +132,6 @@ private:
 
     void HandleMeetingAcceptanceAnswer(Message msg);
 
-    void HandleMeetingAcceptanceAck(Message msg);
-
-    void HandleMeetingAcceptanceDenial(Message msg);
-
-    void HandleMeetingAcceptanceDelivery(Message msg);
-
     void initialize_mapping();
 
     void HandleMeetingEnd(Message msg);
@@ -146,8 +141,9 @@ private:
 #define DASH "=====================================\n"
 #define NODE_LOG(msg, ...) printf(DASH                 \
                              "Node :: %d     \n"  \
+                             "Operation :: %d     \n"  \
                              "msg  :: " msg "\n",  \
-                             this->ID_, ##__VA_ARGS__)
+                             this->ID_, this->operation_number_, ##__VA_ARGS__)
 
 
 #endif //PR_NODE_H
