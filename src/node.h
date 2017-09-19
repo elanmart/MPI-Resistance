@@ -86,7 +86,6 @@ public:
     bool get(Message *msg);
     void send_new_message(int destination, Words w, int *payload = nullptr);
     void broadcast(Message msg);
-    void forward(Message msg, int target);                               // Sends message to it's neighbours
     void send_to(Message msg, set<int> recipients);                      // Sends message to a set of receipents
     void send_to(Message msg, int dest);                                 // Sends message to destination
 
@@ -103,7 +102,7 @@ public:
     void initialize_meeting_procedure();
     void check_invite_responses();                                              // After receiving a response from Invitee, check if everyone already responded. If true, start meeting
     void invite_participants();                                            // After getting permission, invites participants
-    void meet();
+    void meeting_cancel();
 
     // resource / ack acquisition
     void ask_for_resource();                                               // Asks anyone for resource
@@ -111,21 +110,28 @@ public:
     void on_resource_available();
     void resource_answer(int id);                                          // Answer a process requesting a resource. This may happen in several places
     void perhaps_next_answer();
+    void perhaps_meeting_answer(int process_id);
 
     // Message handlers
     void initialize_mapping();
+
+    void HandleNoneMessage(Message msg);
+
 
     void HandleMeetingInvitiation(Message msg);
 
     void HandleMeetingInvitationAccept(Message msg);
 
-    void HandleNoneMessage(Message msg);
-
-    void HandleMeetingCancel(Message msg);
-
     void HandleMeetingInvitationDecline(Message msg);
 
     void HandleMeetingStart(Message msg);
+
+    void HandleMeetingEnd(Message msg);
+
+    void HandleMeetingDone(Message msg);
+
+    void HandleMeetingCancel(Message msg);
+
 
     void HandleResourceRequest(Message msg);
 
@@ -137,23 +143,16 @@ public:
 
     void HandleResourceDelivery(Message msg);
 
+
     void HandleMeetingAcceptanceRequest(Message msg);
+
+    void HandleMeetingAcceptanceReport(Message msg);
 
     void HandleMeetingAcceptanceGranted(Message msg);
 
-    void HandleMeetingEnd(Message msg);
+    void HandleMeetingAcceptanceDenied(Message msg);
 
-    void HandleMeetingDone(Message msg);
-
-    void HandleAcceptanceReport(Message msg);
-
-    void HandleAcceptanceDenied(Message msg);
-
-    void HandleAcceptanceFullfilled(Message msg);
-
-    void perhaps_meeting_answer(int process_id);
-
-    void meeting_cancel();
+    void HandleMeetingAcceptanceFullfilled(Message msg);
 };
 
 // Logging Helpers

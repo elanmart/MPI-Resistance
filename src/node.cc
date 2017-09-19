@@ -83,12 +83,6 @@ void Node::broadcast(Message msg) {
     send_to(msg, neighbours_);
 }
 
-void Node::forward(Message msg, int target) {
-    auto new_msg = create_message(msg.number, msg.sender, target, msg.word, msg.payload);
-
-    send_to(new_msg, target);
-}
-
 void Node::send_to(Message msg, set<int> recipients) {
     for (auto id : recipients)
         send_to(msg, id);
@@ -274,6 +268,14 @@ void Node::ask_for_resource() {
     }
 }
 
+void Node::ask_for_acceptance() {
+    int payload[8] = {level_,
+                      (int) participants_.size(),
+                      0, 0, 0, 0, 0, 0};
+
+    send_new_message(ALL, Words::MEETING_ACCEPTANCE_REQUEST, payload);
+}
+
 void Node::resource_answer(int id) {
     NODE_LOG("Sending resource to %d", id);
 
@@ -306,34 +308,40 @@ void Node::perhaps_next_answer() {
     }
 }
 
-void Node::ask_for_acceptance() {
-    int payload[8] = {level_,
-                      (int) participants_.size(),
-                      0, 0, 0, 0, 0, 0};
+void Node::perhaps_meeting_answer(int process_id) {
+    auto retcode = acceptance_queue_.get_answer(ID_, process_id);
 
-    send_new_message(ALL, Words::MEETING_ACCEPTANCE_REQUEST, payload);
+    if (retcode == 1)
+        send_new_message(process_id, MEETING_ACCEPTANCE_GRANTED);
+
+    if (retcode == -1)
+        send_new_message(process_id, MEETING_ACCEPTANCE_DENIED);
+
 }
 
 // message handlers
-//todo: add acceptor logic
 void Node::initialize_mapping() {
     comm_func_map_t[Words::NONE] = &Node::HandleNoneMessage;
 
     comm_func_map_t[Words::RESOURCE_REQUEST] = &Node::HandleResourceRequest;
-    comm_func_map_t[Words::RESOURCE_ANSWER] = &Node::HandleResourceAnswer;
-    comm_func_map_t[Words::RESOURCE_ACK] = &Node::HandleResourceAck;
-    comm_func_map_t[Words::RESOURCE_DENIED] = &Node::HandleResourceDenial;
-    comm_func_map_t[Words::RESOURCE_SENT] = &Node::HandleResourceDelivery;
+    comm_func_map_t[Words::RESOURCE_ANSWER]  = &Node::HandleResourceAnswer;
+    comm_func_map_t[Words::RESOURCE_ACK]     = &Node::HandleResourceAck;
+    comm_func_map_t[Words::RESOURCE_DENIED]  = &Node::HandleResourceDenial;
+    comm_func_map_t[Words::RESOURCE_SENT]    = &Node::HandleResourceDelivery;
 
-    comm_func_map_t[Words::MEETING_ACCEPTANCE_REQUEST] = &Node::HandleMeetingAcceptanceRequest;
-    comm_func_map_t[Words::MEETING_ACCEPTANCE_GRANTED] = &Node::HandleMeetingAcceptanceGranted;
+    comm_func_map_t[Words::MEETING_ACCEPTANCE_REQUEST]   = &Node::HandleMeetingAcceptanceRequest;
+    comm_func_map_t[Words::MEETING_ACCEPTANCE_GRANTED]   = &Node::HandleMeetingAcceptanceGranted;
+    comm_func_map_t[Words::MEETING_ACCEPTANCE_DENIED]    = &Node::HandleMeetingAcceptanceDenied;
+    comm_func_map_t[Words::MEETING_ACCEPTANCE_FULFILLED] = &Node::HandleMeetingAcceptanceFullfilled;
+    comm_func_map_t[Words::MEETING_ACCEPTANCE_REPORT]    = &Node::HandleMeetingAcceptanceReport;
 
-    comm_func_map_t[Words::MEETING_INVITE] = &Node::HandleMeetingInvitiation;
-    comm_func_map_t[Words::MEETING_ACCEPT] = &Node::HandleMeetingInvitationAccept;
+    comm_func_map_t[Words::MEETING_INVITE]  = &Node::HandleMeetingInvitiation;
+    comm_func_map_t[Words::MEETING_ACCEPT]  = &Node::HandleMeetingInvitationAccept;
     comm_func_map_t[Words::MEETING_DECLINE] = &Node::HandleMeetingInvitationDecline;
-    comm_func_map_t[Words::MEETING_CANCEL] = &Node::HandleMeetingCancel;
-    comm_func_map_t[Words::MEETING_START] = &Node::HandleMeetingStart;
-    comm_func_map_t[Words::MEETING_END] = &Node::HandleMeetingEnd;
+    comm_func_map_t[Words::MEETING_CANCEL]  = &Node::HandleMeetingCancel;
+    comm_func_map_t[Words::MEETING_START]   = &Node::HandleMeetingStart;
+    comm_func_map_t[Words::MEETING_END]     = &Node::HandleMeetingEnd;
+    comm_func_map_t[Words::MEETING_DONE]    = &Node::HandleMeetingDone;
 
     return;
 }
@@ -395,7 +403,6 @@ void Node::HandleMeetingEnd(__unsued Message msg) {
     meeting_state_ = MeetingState::IDLE;
 }
 
-// todo add this to map
 void Node::HandleMeetingDone(Message msg) {
     NODE_LOG("Handling meeting done from %d", msg.sender);
 
@@ -520,18 +527,7 @@ void Node::HandleMeetingAcceptanceRequest(Message msg) {
     }
 }
 
-void Node::perhaps_meeting_answer(int process_id) {
-    auto retcode = acceptance_queue_.get_answer(ID_, process_id);
-
-    if (retcode == 1)
-        send_new_message(process_id, MEETING_ACCEPTANCE_GRANTED);
-
-    if (retcode == -1)
-        send_new_message(process_id, MEETING_ACCEPTANCE_DENIED);
-
-}
-
-void Node::HandleAcceptanceReport(Message msg) {
+void Node::HandleMeetingAcceptanceReport(Message msg) {
     int process_T      = msg.payload[0];
     int process_id     = msg.payload[1];
     int process_lvl    = msg.payload[2];
@@ -545,10 +541,10 @@ void Node::HandleAcceptanceReport(Message msg) {
 
 }
 
-void Node::HandleAcceptanceDenied(Message msg) {
+void Node::HandleMeetingAcceptanceDenied(__unsued Message msg) {
     meeting_cancel();
 }
 
-void Node::HandleAcceptanceFullfilled(Message msg) {
+void Node::HandleMeetingAcceptanceFullfilled(Message msg) {
     acceptance_queue_.remove_entry(msg.sender);
 }
