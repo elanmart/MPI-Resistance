@@ -31,6 +31,7 @@ public:
     Node();
     Node(int ID);
     Node(int *buffer);
+    void set_manager(Manager *m);                                       // Sets up a manager
 
     // Identity
     int32_t ID_;                                                      // ID
@@ -48,7 +49,6 @@ public:
 
     // Communication interface
     Manager *manager_ = nullptr;                                        // MPI Interface. Contains send and receive queues
-    void set_manager(Manager *m);                                       // Sets up a manager
 
     // Node States
     MeetingState  meeting_state_;
@@ -105,7 +105,9 @@ public:
     void resource_answer(int id);                                          // Answer a process requesting a resource. This may happen in several places
     void perhaps_next_answer();
 
-   // Message handlers
+    // Message handlers
+    void initialize_mapping();
+
     void HandleMeetingInvitiation(Message msg);
 
     void HandleMeetingInvitationAccept(Message msg);
@@ -131,8 +133,6 @@ public:
     void HandleMeetingAcceptanceRequest(Message msg);
 
     void HandleMeetingAcceptanceAnswer(Message msg);
-
-    void initialize_mapping();
 
     void HandleMeetingEnd(Message msg);
 };
