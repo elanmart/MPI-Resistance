@@ -107,20 +107,15 @@ void Manager::_reciever_loop() {
 }
 
 void Manager::_recv_msg() {
-   int flag;
+   Message msg;
    MPI_Status status;
-   MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
 
-   if (flag) {
-      Message msg;
-      int src = status.MPI_SOURCE;
-      MPI_Recv(&msg, 1, MSG_Dataype_, src, MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
+   MPI_Recv(&msg, 1, MSG_Dataype_, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+   int src = status.MPI_SOURCE;
+   msg.__from__ = src;
 
-      msg.__from__ = src;
-
-      std::lock_guard<std::mutex> guard(*_incoming_queue_mutex);
-      incoming.push(msg);
-   }
+   std::lock_guard<std::mutex> guard(*_incoming_queue_mutex);
+   incoming.push(msg);
 }
 
 // --- utils ---
