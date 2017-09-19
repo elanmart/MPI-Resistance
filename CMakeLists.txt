@@ -16,7 +16,10 @@ set(SOURCE_FILES
         src/comm.cc
         src/comm.h
         src/message.cc
-        src/message.h)
+        src/message.h
+        src/ack_queue.cc
+        src/ack_queue.h
+        )
 
 add_executable(PR ${SOURCE_FILES})
 target_link_libraries(PR ${MPI_LIBRARIES})

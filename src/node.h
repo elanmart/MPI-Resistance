@@ -71,7 +71,7 @@ public:
     std::map<Words, comm_method> comm_func_map_t;
 
     // Acceptor queues
-    acceptor_queue_t acceptance_queue_;
+    AcceptorQueue acceptance_queue_;
 
     // synchronization
     bool STOP_;

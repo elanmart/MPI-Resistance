@@ -21,7 +21,7 @@ Node::Node() {
    is_acceptor_ = 0;
    resource_count_ = 0;
    operation_number_ = 0;
-   acceptance_queue_ = acceptor_queue_t(tuple_compare_by_first);
+   acceptance_queue_ = AcceptorQueue(3);
    awaiting_start_confirm_ = 0;
    resource_state_ = ResourceState::IDLE;
    meeting_state_ = MeetingState::IDLE;
