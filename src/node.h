@@ -57,6 +57,7 @@ public:
     set<int> participants_;
     queue<int> resource_answer_queue_;
     int awaiting_response_;
+    int awaiting_start_confirm_;
     int time_penalty_;
 
     // message bookkeeping
@@ -94,7 +95,7 @@ public:
 
     // meetings
     void initialize_meeting_procedure();
-    void try_start_meeting();                                              // After receiving a response from Invitee, check if everyone already responded. If true, start meeting
+    void check_invite_responses();                                              // After receiving a response from Invitee, check if everyone already responded. If true, start meeting
     void invite_participants();                                            // After getting permission, invites participants
     void meet();
 
@@ -135,6 +136,10 @@ public:
     void HandleMeetingAcceptanceAnswer(Message msg);
 
     void HandleMeetingEnd(Message msg);
+
+    void debug();
+
+    void HandleMeetingDone(Message msg);
 };
 
 // Logging Helpers
