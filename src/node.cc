@@ -235,17 +235,21 @@ void Node::check_invite_responses() {
         } else {
             NODE_LOG("Not enough participants to start meeting, canceling...");
 
-            for (auto id : this->participants_) {
-                send_new_message(id, MEETING_CANCEL);
-            }
-
-            participants_.clear();
-            resource_state_ = ResourceState::IDLE;
-            meeting_state_ = MeetingState::IDLE;
-
-            perhaps_next_answer();
+            meeting_cancel();
         }
     }
+}
+
+void Node::meeting_cancel() {
+    for (auto id : this->participants_) {
+        send_new_message(id, MEETING_CANCEL);
+    }
+
+    participants_.clear();
+    resource_state_ = ResourceState::IDLE;
+    meeting_state_ = MeetingState::IDLE;
+
+    perhaps_next_answer();
 }
 
 // resource / ack acquisition
@@ -497,23 +501,54 @@ void Node::HandleMeetingAcceptanceRequest(Message msg) {
         NODE_LOG("Acceptor here, handling msg from %d", msg.sender);
 
         int process_lvl = msg.payload[0];
-        int n_processes = msg.payload[1];
+        int n_requested = msg.payload[1];
 
-        acceptance_queue_.perhaps_insert_id(msg.)
-        acceptance_queue_.get_answer(ID_, msg.sender);
+        acceptance_queue_.perhaps_insert_id(msg.timestamp, msg.sender, process_lvl, n_requested);
 
-        send_new_message(msg.sender, MEETING_ACCEPTANCE_GRANTED);
+        int payload[8] = {
+                (int) msg.timestamp,
+                msg.sender,
+                process_lvl,
+                n_requested,
+                level_,
+                0, 0, 0
+        };
+
+        send_new_message(ALL, MEETING_ACCEPTANCE_REPORT, payload);
+
+        perhaps_meeting_answer(msg.sender);
     }
 }
 
+void Node::perhaps_meeting_answer(int process_id) {
+    auto retcode = acceptance_queue_.get_answer(ID_, process_id);
+
+    if (retcode == 1)
+        send_new_message(process_id, MEETING_ACCEPTANCE_GRANTED);
+
+    if (retcode == -1)
+        send_new_message(process_id, MEETING_ACCEPTANCE_DENIED);
+
+}
+
 void Node::HandleAcceptanceReport(Message msg) {
+    int process_T      = msg.payload[0];
+    int process_id     = msg.payload[1];
+    int process_lvl    = msg.payload[2];
+    int n_requested    = msg.payload[3];
+    int acceptor_level = msg.payload[4];
+
+    acceptance_queue_.add_response_entry((uint64_t) process_T, process_id, process_lvl, n_requested,
+                                         msg.timestamp, msg.sender, acceptor_level);
+
+    perhaps_meeting_answer(process_id);
 
 }
 
 void Node::HandleAcceptanceDenied(Message msg) {
-
+    meeting_cancel();
 }
 
 void Node::HandleAcceptanceFullfilled(Message msg) {
-
+    acceptance_queue_.remove_entry(msg.sender);
 }

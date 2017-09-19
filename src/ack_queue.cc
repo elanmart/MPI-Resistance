@@ -20,8 +20,7 @@ void AcceptorQueue::perhaps_insert_id(uint64_t T_request_sent, int process_id, i
 }
 
 void AcceptorQueue::add_response_entry(uint64_t T_request_sent, int process_id, int process_level, int n_requested,
-                                       uint64_t T_request_recieved, int acceptor_id, int acceptor_level,
-                                       int expected_count) {
+                                       uint64_t T_request_recieved, int acceptor_id, int acceptor_level) {
 
     perhaps_insert_id(T_request_sent, process_id, process_level, n_requested);
 

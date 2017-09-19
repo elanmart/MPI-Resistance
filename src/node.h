@@ -151,9 +151,9 @@ public:
 
     void HandleAcceptanceFullfilled(Message msg);
 
+    void perhaps_meeting_answer(int process_id);
 
-
-    int get_answer_code();
+    void meeting_cancel();
 };
 
 // Logging Helpers

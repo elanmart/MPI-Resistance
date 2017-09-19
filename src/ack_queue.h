@@ -24,11 +24,22 @@ public:
     map<int, int> response_counter_;
     vector<MainQueueEntry> storage_;
 
+    void remove_entry(int process_id) {
+        for (uint32_t i = 0; i<storage_.size(); i++) {
+
+            auto& item = storage_.at(i);
+
+            if (item.process_id_ == process_id) {
+                storage_.erase(storage_.begin() + i);
+                return;
+            }
+        }
+    }
+
     void perhaps_insert_id(uint64_t T_request_sent, int process_id, int process_level, int n_requested);
 
     void add_response_entry(uint64_t T_request_sent, int process_id, int process_level, int n_requested,
-                            uint64_t T_request_recieved, int acceptor_id, int acceptor_level,
-                            int expected_count = -1);
+                            uint64_t T_request_recieved, int acceptor_id, int acceptor_level);
 
     int num_responses(int process_id);
 
