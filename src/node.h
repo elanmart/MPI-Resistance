@@ -86,6 +86,7 @@ public:
     // message bookkeeping
     set<int64_t> msg_cache_; // Set of "seen messages"
     int msg_number_;         // Sequential number assigned to every new message
+    uint64_t T_;
 
     // Main loop exec function, processes message and generates response
     void handle(Message msg);

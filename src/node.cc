@@ -68,11 +68,19 @@ void Node::_send(Message msg) {
 }
 
 bool Node::get(Message *msg) {
-   return manager_->get(msg);
+   auto msg_available = manager_->get(msg);
+   
+   if (msg_available)
+      T_ = max(msg->timestamp, T_);
+
+   return msg_available;
 }
 
 
 void Node::send_to(Message msg, int dest) {
+   T_ += 1;
+   msg.timestamp = T_;
+
    manager_->put(msg, dest);
 }
 

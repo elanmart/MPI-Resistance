@@ -137,8 +137,8 @@ MPI_Datatype get_mpi_message_dtype(Config &cfg) {
    const int k = 6;
 
    int          sizes[k]   = {1, 1, 1, 1, 1, 8};
-   MPI_Datatype types[k]   = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT};
-   MPI_Aint     offsets[k] = {offsetof(Message, number), offsetof(Message, timestamp),
+   MPI_Datatype types[k]   = {MPI_UINT64_T, MPI_INT,  MPI_INT,  MPI_INT, MPI_INT, MPI_INT};
+   MPI_Aint     offsets[k] = {offsetof(Message, timestamp), offsetof(Message, number),
                               offsetof(Message, sender), offsetof(Message, destination),
                               offsetof(Message, word),   offsetof(Message, payload)};
 

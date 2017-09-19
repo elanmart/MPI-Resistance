@@ -74,11 +74,11 @@ typedef struct _Message {
     int __from__;
     int __to__;
 
-    int number;      // Numer porządkowy wiadomości. Unikalny dla danego węzła.
-    int timestamp;   // Czas nadania wiadomości
-    int sender;      // Oryginalny twórca wiadomośći
-    int destination; // Ostateczny cel wiadomości. To nie dotyczy MPI, tylko drzewa. Może być "ALL"
-    Words word;       // Zobacz enum wyżej. Mówi o tym co wiadomość ma oznaczać
+    uint64_t timestamp; // Czas nadania wiadomości
+    int number;         // Numer porządkowy wiadomości. Unikalny dla danego węzła.
+    int sender;         // Oryginalny twórca wiadomośći
+    int destination;    // Ostateczny cel wiadomości. To nie dotyczy MPI, tylko drzewa. Może być "ALL"
+    Words word;         // Zobacz enum wyżej. Mówi o tym co wiadomość ma oznaczać
 
     int payload[PAYLOAD_SIZE]; // Póki co nie używamy, ale może się przydać dodatkowy payload.
 } Message;
