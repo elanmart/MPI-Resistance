@@ -31,47 +31,52 @@ class AcceptorQueue{
 public:
     vector<acceptor_queue_entry> storage_;
     set<int> seen_ids_;
+    map<int, int> response_counter_;
 
-    void perhaps_insert_id(uint64_t T_request_sent, int process_id) {
+    void perhaps_insert_id(uint64_t T_request_sent, int process_id, int process_level) {
 
         if (contains(seen_ids_, process_id))
             return;
 
-        auto nested_queue = vector<time_int_pair>();
-        auto entry        = make_tuple(T_request_sent, process_id, nested_queue);
+        auto nested_queue = vector<nested_queue_entry>();
+        auto entry        = make_tuple(T_request_sent, process_id, process_level, nested_queue);
 
         seen_ids_.insert(process_id);
+        response_counter_[process_id] = 0;
+
         storage_.push_back(entry);
-        sort(storage_.begin(), storage_.end(), tuple_compare_by_first);
+        sort(storage_.begin(), storage_.end());
     }
 
-    void add_response_entry(uint64_t T_request_sent, int process_id,
-                            uint64_t T_request_recieved, int acceptor_id) {
+    void add_response_entry(uint64_t T_request_sent, int process_id, int process_level,
+                            uint64_t T_request_recieved, int acceptor_id, int acceptor_level,
+                            int expected_count = -1) {
 
-        perhaps_insert_id(T_request_sent, process_id);
+        perhaps_insert_id(T_request_sent, process_id, process_level);
 
         for (auto item : storage_) {
             if (get<1>(item) == process_id) {
 
-                auto& nested_queue = get<2>(item);
-                nested_queue.push_back(make_pair(T_request_recieved, acceptor_id));
-                sort(nested_queue.begin(), nested_queue.end(), pair_compare_by_first);
+                auto& nested_queue = get<3>(item);
+                nested_queue.push_back(make_tuple(T_request_recieved, acceptor_id, acceptor_level));
+                sort(nested_queue.begin(), nested_queue.end());
 
+                response_counter_[process_id] += 1;
             }
         }
     }
 
+    int num_responses(int process_id) {
+        return response_counter_[process_id];
+    }
+
+    bool should_answer(int acceptor_id, int process_id) {
+        if
+    }
+
 private:
-    typedef pair<uint64_t, int> time_int_pair;
-    typedef tuple<uint64_t, int, std::vector<time_int_pair>> acceptor_queue_entry;
-
-    bool pair_compare_by_first(time_int_pair left, time_int_pair right) {
-       return (left.first < right.first);
-    };
-
-    bool tuple_compare_by_first(acceptor_queue_entry left, acceptor_queue_entry right) {
-        return (get<0>(left) < get<0>(right));
-    };
+    typedef tuple<uint64_t, int, int> nested_queue_entry;
+    typedef tuple<uint64_t, int, int, std::vector<nested_queue_entry>> acceptor_queue_entry;
 };
 
 
