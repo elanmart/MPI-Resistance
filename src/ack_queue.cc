@@ -9,7 +9,6 @@ void AcceptorQueue::perhaps_insert_id(uint64_t T_request_sent, int process_id, i
     if (contains(seen_ids_, process_id))
         return;
 
-    auto nested_queue = vector<nested_queue_entry>();
     auto entry        = MainQueueEntry(T_request_sent, process_id, process_level, n_requested);
 
     seen_ids_.insert(process_id);
@@ -45,7 +44,7 @@ MainQueueEntry AcceptorQueue::get(int process_id) {
         if (item.process_id_ == process_id)
             return item;
 
-    return NULL;
+    throw ("KeyError: " + to_string(process_id) + " was not found in queue");
 }
 
 bool AcceptorQueue::check_ready_and_limits(MainQueueEntry &item, int acceptor_id) {
