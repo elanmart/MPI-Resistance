@@ -20,9 +20,15 @@ enum class ResourceState {
 
 enum class MeetingState {
     IDLE,                                                             // Not participating, can join
-    WAITING,                                                          // Waiting for response (meeting start or decline)
     LOCKED,                                                           // Meeting in progress
     MASTER_ORG,                                                       // Meeting organizer
+};
+
+enum class AcceporState {
+    None,
+    Waiting,
+    Active,
+    Retired
 };
 
 
@@ -32,8 +38,8 @@ public:
 
     // ctors
     Node();
-    Node(int ID);
-    Node(int *buffer);
+    explicit Node(int ID);
+    explicit Node(int *buffer);
     void set_manager(Manager *m);                                       // Sets up a manager
 
     // Identity
@@ -75,6 +81,17 @@ public:
 
     // Acceptor queues
     AcceptorQueue acceptance_queue_;
+    map<int64_t, vector<Message>> unanswered_requests_;
+    map<int, uint64_t> timestamps_log_;
+    AcceporState acceptor_state;
+    uint64_t timestamp_limit;
+    uint64_t trigger_;
+    int sucessor_id_;
+    int retry_await_;
+    int last_retry_;
+    int now_;
+    void initialize_role_transfer();
+    void set_trigger(Message& msg);
 
     // synchronization
     bool STOP_;
@@ -85,6 +102,7 @@ public:
     // message passing
     bool get(Message *msg);
     void send_new_message(int destination, Words w, int *payload = nullptr);
+    void send_new_acceptor_messgae(int destination, Words w, int payload[] = nullptr);
     void broadcast(Message msg);
     void send_to(Message msg, set<int> recipients);                      // Sends message to a set of receipents
     void send_to(Message msg, int dest);                                 // Sends message to destination
@@ -153,6 +171,29 @@ public:
     void HandleMeetingAcceptanceDenied(Message msg);
 
     void HandleMeetingAcceptanceFullfilled(Message msg);
+
+
+    void HandleAcceptorPassOffer(Message msg);
+
+    void HandleAcceptorPassAck(Message msg);
+
+    void HandleAcceptorPassCancel(Message msg);
+
+    void HandleAcceptorPassDeny(Message msg);
+
+    void HandleAcceptorPassConfirm(Message msg);
+
+    void HandleAcceptorPassDone(Message msg);
+
+    void HandleAcceptorPassTest(Message msg);
+
+    void HandleAcceptorPassRelease(Message msg);
+
+    void pass(Message msg);
+
+    void pass(int sender_id);
+
+    void test_can_idle();
 };
 
 // Logging Helpers

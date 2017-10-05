@@ -22,6 +22,7 @@ Node::Node() {
     resource_count_ = 0;
     operation_number_ = 0;
     acceptance_queue_ = AcceptorQueue(3, 3); // todo: move this to `deserialize()` and read parameters from config.
+    unanswered_requests_ = set<int>();
     awaiting_start_confirm_ = 0;
     resource_state_ = ResourceState::IDLE;
     meeting_state_ = MeetingState::IDLE;
@@ -75,6 +76,28 @@ void Node::send_new_message(int destination, Words w, int *payload) {
     msg_cache_.insert(identifier(msg));
 
     broadcast(msg);
+}
+
+void Node::test_can_idle() {
+    for (auto& item : timestamps_log_) {
+        if (item.second < timestamp_limit)
+            return;
+    }
+
+    acceptor_state = AcceporState::None;
+    send_new_message(sucessor_id_, Words::ACCEPTOR_PASS_RELEASE);
+}
+
+void Node::send_new_acceptor_messgae(int destination, Words w, int payload[]) {
+   if (acceptor_state == AcceporState::Active) {
+      send_new_message(destination, w, payload);
+   } else if (acceptor_state == AcceporState::Retired) {
+       send_new_message(sucessor_id_, Words::ACCEPTOR_PASS_TEST, create_payload(trigger_).data());
+       test_can_idle();
+   } else {
+       auto answer = create_message(-1, -1, destination, w, payload);
+       unanswered_requests_[trigger_].push_back(answer);
+   }
 }
 
 void Node::broadcast(Message msg) {
@@ -134,7 +157,7 @@ pair<int, int *> Node::serialize() {
     int n_neighbours = (int) neighbours_.size();
 
     int n_items = 5 + 2 + n_children + n_neighbours;
-    int *buffer = new int[n_items];
+    auto *buffer = new int[n_items];
 
     buffer[0] = ID_;
     buffer[1] = level_;
@@ -312,11 +335,10 @@ void Node::perhaps_meeting_answer(int process_id) {
     auto retcode = acceptance_queue_.get_answer(ID_, process_id);
 
     if (retcode == 1)
-        send_new_message(process_id, MEETING_ACCEPTANCE_GRANTED);
+        send_new_acceptor_messgae(process_id, MEETING_ACCEPTANCE_GRANTED);
 
     if (retcode == -1)
-        send_new_message(process_id, MEETING_ACCEPTANCE_DENIED);
-
+        send_new_acceptor_messgae(process_id, MEETING_ACCEPTANCE_DENIED);
 }
 
 // message handlers
@@ -342,8 +364,6 @@ void Node::initialize_mapping() {
     comm_func_map_t[Words::MEETING_START]   = &Node::HandleMeetingStart;
     comm_func_map_t[Words::MEETING_END]     = &Node::HandleMeetingEnd;
     comm_func_map_t[Words::MEETING_DONE]    = &Node::HandleMeetingDone;
-
-    return;
 }
 
 // ----- Invitation Handlers -----
@@ -503,31 +523,33 @@ void Node::HandleMeetingAcceptanceGranted(__unsued Message msg) {
 }
 
 // acceptor-side
-void Node::HandleMeetingAcceptanceRequest(Message msg) {
-    if (is_acceptor_) {
-        NODE_LOG("Acceptor here, handling msg from %d", msg.sender);
+void Node::HandleMeetingAcceptanceRequest(Message msg)  {
+    set_trigger(msg);
 
-        int process_lvl = msg.payload[0];
-        int n_requested = msg.payload[1];
+    NODE_LOG("handling acceptance request msg from %d", msg.sender);
 
-        acceptance_queue_.perhaps_insert_id(msg.timestamp, msg.sender, process_lvl, n_requested);
+    int process_lvl = msg.payload[0];
+    int n_requested = msg.payload[1];
 
-        int payload[8] = {
-                (int) msg.timestamp,
-                msg.sender,
-                process_lvl,
-                n_requested,
-                level_,
-                0, 0, 0
-        };
+    acceptance_queue_.perhaps_insert_id(msg.timestamp, msg.sender, process_lvl, n_requested);
 
-        send_new_message(ALL, MEETING_ACCEPTANCE_REPORT, payload);
+    int payload[8] = {
+            (int) msg.timestamp,
+            msg.sender,
+            process_lvl,
+            n_requested,
+            level_,
+            0, 0, 0
+    };
 
-        perhaps_meeting_answer(msg.sender);
-    }
+    send_new_acceptor_messgae(ALL, MEETING_ACCEPTANCE_REPORT, payload);
+
+    perhaps_meeting_answer(msg.sender);
 }
 
 void Node::HandleMeetingAcceptanceReport(Message msg) {
+    set_trigger(msg);
+
     int process_T      = msg.payload[0];
     int process_id     = msg.payload[1];
     int process_lvl    = msg.payload[2];
@@ -547,4 +569,96 @@ void Node::HandleMeetingAcceptanceDenied(__unsued Message msg) {
 
 void Node::HandleMeetingAcceptanceFullfilled(Message msg) {
     acceptance_queue_.remove_entry(msg.sender);
+}
+
+void Node::set_trigger(Message &msg) {
+    trigger_ = identifier(msg);
+}
+
+void Node::HandleAcceptorPassOffer(Message msg) {
+    if (acceptor_state != AcceporState::None)
+        send_new_message(msg.sender, Words::ACCEPTOR_PASS_DENY);
+
+    auto min_level = msg.payload[0];
+    auto max_level = msg.payload[1];
+    auto ban_neigh = (bool) msg.payload[2];
+
+    if (min_level <= level_ > max_level)
+        send_new_message(msg.sender, Words::ACCEPTOR_PASS_DENY);
+
+    if (ban_neigh and (neighbours_.find(msg.sender) != neighbours_.end()))
+        send_new_message(msg.sender, Words::ACCEPTOR_PASS_DENY);
+
+    acceptor_state = AcceporState::Waiting;
+    send_new_message(msg.sender, Words::ACCEPTOR_PASS_ACK);
+}
+
+void Node::pass(int sender_id) {
+    auto payload = create_payload(
+            is_acceptor_
+    );
+
+    is_acceptor_ = -1;
+    acceptor_state = AcceporState::Retired;
+
+    send_new_message(sender_id, Words::ACCEPTOR_PASS_CONFIRM, payload.data());
+}
+
+void Node::HandleAcceptorPassAck(Message msg) {
+    if (acceptor_state == AcceporState::Active) {
+        pass(msg.sender);
+    } else {
+        send_new_message(msg.sender, Words::ACCEPTOR_PASS_CANCEL;
+    }
+}
+
+void Node::HandleAcceptorPassConfirm(Message msg) {
+    auto accepor_id = msg.payload[0];
+    is_acceptor_ = accepor_id;
+}
+
+// todo: what if i've already passed it?
+void Node::HandleAcceptorPassTest(Message msg) {
+    auto id = (uint64_t) msg.payload[0];
+    if (unanswered_requests_.find(id) != unanswered_requests_.end()) {
+        for (auto &answer : unanswered_requests_[id]) {
+            send_new_message(msg.destination, msg.word, msg.payload);
+        }
+    }
+}
+
+void Node::HandleAcceptorPassRelease(Message msg) {
+    acceptor_state = AcceporState::Active;
+}
+
+void Node::initialize_role_transfer() {
+    if (acceptor_state == AcceporState::Active and (last_retry_ - now_) < retry_await_) {
+        float p = rand();
+
+        int min_level = -1;
+        int max_level = 999999;
+
+        if (p < 0.1) {
+            min_level = level_;
+        } else if (p < 0.2) {
+            max_level = level_;
+        } else {
+            min_level = level_;
+            max_level = level_;
+        }
+
+        auto payload = create_payload(
+                min_level,
+                max_level
+        ).data();
+
+        send_new_message(ALL, Words::ACCEPTOR_PASS_OFFER, payload);
+    }
+}
+
+//todo make sure you never pass 64 bit ID_ in a single, 32-bit payload entry
+//todo add dynamic timestamp filling
+
+void Node::HandleAcceptorPassCancel(Message msg) {
+    acceptor_state = AcceporState::None;
 }
