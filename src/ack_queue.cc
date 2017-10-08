@@ -3,6 +3,7 @@
 //
 
 #include "ack_queue.h"
+#include "utils.h"
 
 void AcceptorQueue::perhaps_insert_id(uint64_t T_request_sent, int process_id, int process_level, int n_requested) {
 

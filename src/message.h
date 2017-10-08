@@ -82,7 +82,7 @@ typedef struct _Message {
 /*
  * Tworzy nową wiadomość.
  */
-Message create_message(int msg_number, int sender, int destination,
+Message create_message(int msg_number, int sender, int destination, uint64_t T,
                        Words word = Words::NONE, int payload[] = nullptr);
 
 /*

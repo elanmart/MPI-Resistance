@@ -35,6 +35,8 @@ If so, then we could implement acceptor-passing in the following way:
             This seems like a good idea.
 
 
+- [ ] make sure you never pass uint64 id as int
+- [ ] do not increase timestamp when it's not necessary
 
 
 

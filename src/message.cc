@@ -11,13 +11,13 @@ int64_t identifier(Message &m) {
 }
 
 
-Message create_message(int msg_number, int sender, int destination,
+Message create_message(int msg_number, int sender, int destination, uint64_t T,
                         Words word, int payload[]) {
 
    Message msg = {
            -1,                         // __from__
            -1,                         // __to__
-           0,                          // timestamp. Will be filled with lamport timestamp before sending.
+           T,                          // timestamp. Will be filled with lamport timestamp before sending.
            msg_number,                 // number
            sender,                     // sender
            destination,                // destination

@@ -6,6 +6,7 @@
 #include "message.h"
 #include "node.h"
 
+
 #define BUFFER_SIZE 4096 // Jakiś bufor dla MPI-aja
 #define ROOT   0         // ID roota (MPI, nie w naszej strukturze)
 #define NOTAG  0         // to jest używane w MPI-u. powinniśmy używać MPI_NO_TAG, ale się z czymś gryzło

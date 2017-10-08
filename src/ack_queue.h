@@ -2,8 +2,6 @@
 #define PR_ACCEPTORQUEUE_H
 
 #include "common.h"
-#include "utils.h"
-
 
 class NestedQueueEntry {
 public:
@@ -25,7 +23,6 @@ public:
 
 class MainQueueEntry {
 public:
-    MainQueueEntry() {};
     MainQueueEntry(uint64_t T_request_sent, int process_id, int process_level, int n_requested) {
         T_request_sent_ = T_request_sent;
         process_id_     = process_id;
@@ -45,6 +42,10 @@ public:
     bool operator<(const MainQueueEntry& other) const {
         return T_request_sent_ < other.T_request_sent_;
     }
+
+private:
+    MainQueueEntry() {};
+
 };
 
 
