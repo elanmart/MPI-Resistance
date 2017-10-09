@@ -151,8 +151,90 @@ We also check the queue from time to time (e.g. after finishing a meeting), and 
 has requested it while we were using it.
 
 ## Getting Acceptance
+Before processes can start a meeting, they need to get a permission from a dedicated `Acceptor` process that is 
+higher in the hierarchy. 
 
+The problem is that at any given time, in the whole tree, only `p` processes can meet at the same time. 
 
+We solve this problem by using `Request queues` and `Report queues`.
+
+### Each process is an Acceptor
+Each process in our tree has all the infrastructure of an `Acceptor`, and each process handles `Request`s and `Report`s.
+The only difference between true `Acceptor` and an ordinary process is that ordinary process does not send any messages:
+it processes each message it gets, prepares a response, and then instead of sending it, puts it into cache. 
+
+This is necessary if we want to implement acceptor passing later on.
+
+### Requests and Reports
+A process will send a request to everyone, hoping that someone will give it permission to meet. 
+
+In the request, it includes it's Lamport timestamp, and number of processes that will take part in the meeting.
+
+Now, each `Acceptor` has a `Request queue`, where each item is a pair of values: `(Request, Report Queue)`. This is a priority queue ordered by request timestamps. 
+
+We'll talk about `Report Queue` in a moment.
+
+If there is no entry with the current `Request` in that `Request Queue`, a new one is created and placed accordingly to 
+its timestamp.
+
+Then this entry is modified: an entry is added its `Report Queue`. 
+
+This entry is a `Report` message. This message contains all the information about the `Request` that triggered the `Report`
+generation, and additionally information about the `Acceptor`: its level in the hierarchy, and timestamp when the `Request` was
+received. 
+
+This `Report` is then sent to all other Nodes.
+
+Upon receiving the `Report` a similar procedure as described above is triggered: we update the right `Report Queue`, by
+inserting the `Report`.
+
+`Report queue` is also a priority queue, ordered by the timestamp when the coupled `Request` was received.
+
+### Generating responses
+Now, how can we use these queues to give response to a process?
+
+First of all, we have to assume that we now the number of `Acceptor`s in the tree. This is not a very strong assumption, 
+since we can always compute this at the beginning of event loop, by sending a single query message from each `Node`.
+
+When an entry in the `Request queue` is modified, a series of checks is triggered:
+
+* Do we have a `Report` from each acceptor for this particular `Request`? If not, ignore it, and wait.
+
+* Are all acceptors lower in the hierarchy than requesting process, and our `Report` has the lowest timestamp? 
+if so, send a `Deny` signal.
+
+* Are all the `Requests` that have lower timestamp already deployed? If not, let's wait.
+    
+* If we sum the number of processes in all the `Request`s with lower timestamps, do we exceed the maximum allowed number?
+If so, ignore for now.
+
+* Are we the first (according to timestamp on `Report`) process that is higher in the hierarchy than the requesting 
+process, and none of the aforementioned checks was fired? We can send an `Accept`.
+
+* Else, we wait, because someone else will answer the `Request`
+
+Once a process receives an `Accept`, it sends messages to it's invitees, waits for responses and sends a `Fulfilled` 
+message, which allows `Acceptors` to delete the entry from queue.
 
 ## Acceptor Passing Procedure
+It is more tricky that it seems to make sure we do not miss any message when the token is being passed.
 
+For example what happens if the new `Acceptor` ignores a message, beacuse it is not yet an acceptor, and the old acceptor 
+ignores it, because at the time it receives it, the `Acceptor` token was already sent to the new process?
+
+To overcome this we implemented a solution where each process is an `Acceptor`, but only some of them are active. 
+
+When two processes decide that they want to exchange acceptor token (in a similar fashion to how resource exchange works),
+the old process goes into `Retired` mode, and new one into `Taking Over` mode. 
+
+A unique `Acceptor ID` is now in the new process. Before it handles any new messages, it replaces all `Acceptor ID == -1` 
+values (placeholders) with its new `Acceptor ID`.
+
+From now on, for other processes it is indistinguishable as an `Acceptor` from the old one.
+
+Now, what about the `Retired` state? We make sure, that as long as necessary (we keep track of timestamps for each process),
+whenever we receive a message, we send to the `Taking Over` acceptor for testing. 
+
+The testing means, that the `Taking Over` process checks in its cache, if it is one of the messages that was seen, but 
+ignored due to the fact that the `Taking Over` was inactive at the time of receiving. If so, the generated response 
+is sent.
