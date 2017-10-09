@@ -1,9 +1,9 @@
 #ifndef PR_COMMON_H
 #define PR_COMMON_H
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <boost/range/irange.hpp>
+#include <cassert>
+#include <cstdlib>
+#include <cstdint>
 #include <vector>
 #include <tuple>
 #include <algorithm>
@@ -13,11 +13,11 @@
 #include <ostream>
 #include <string>
 #include <mpi.h>
-#include <stddef.h>
+#include <cstddef>
 #include <set>
 #include <random>
 #include <queue>
-#include <time.h>
+#include <ctime>
 #include <thread>
 
 using namespace std;

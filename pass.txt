@@ -1,0 +1,53 @@
+This file describes how we could implement acceptor passing.
+
+Q1:
+    Can we assume, that if process A sent two messages, m_1 and m_2, then
+    for every other process B ... Z it is true that m_1 arrives before m_2?
+
+    Yes, I think we can, because of how our queues work.
+
+If so, then we could implement acceptor-passing in the following way:
+    - First of all, we need to add a map, from process_ID to timestamp, where timestamp
+        is the highest timestamp seen for that process.
+        These timestamps have to be updated even if we do not `handle` a recieved message.
+
+    - Finding Next Acceptor
+
+    - Passing The Role
+        We assume proces A is an acceptor, and process B decided to take over that role.
+
+        Then, process pA activates a message cache. Every message that would otherwise be handled
+            due to process pA being an acceptor, is put into cache.
+            A signal is then sent to process pB, telling it to start its work as an acceptor.
+            pB logs the current timestamp, changes its acceptor flag and responds to pA, passing
+            the logged timestamp in payload.
+            pA then looks at the timestamp, and as long as there exists a process, for which the
+            highest seen T is lower than received from pB, we'll keep the cache open. And each time
+            there is a message with T lower than received from pB, we forward it to pB.
+            We stop the procedure once there is no process with T lower than the received.
+
+            Care has to be taken as to how to do forwarding -- if we simply send the message again,
+            it'll be discarded as duplicate.
+
+            So perhaps pB should have a cache as well, and in that cache it would keep all message IDs
+            that were seen, but not answered?
+
+            This seems like a good idea.
+
+
+- [ ] make sure you never pass uint64 id as int
+- [ ] do not increase timestamp when it's not necessary
+
+
+
+
+
+
+
+
+
+
+
+
+
+

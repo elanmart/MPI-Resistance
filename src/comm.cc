@@ -1,7 +1,9 @@
 #include "comm.h"
 
-// --- ctors ---
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-variable"
 
+// --- ctors ---
 Manager::Manager(Config cfg) {
    mpi_init();
 
@@ -35,9 +37,14 @@ void Manager::start() {
 
 // --- setup ---
 
-void Manager::send_node(Node &n, int dest) {
-   auto msg = n.serialize();
-   MPI_Send(msg.second, msg.first, MPI_INT, dest, NOTAG, MPI_COMM_WORLD);
+void Manager::send_node(Node &n, int dest, Config& cfg) {
+   auto pickled = n.serialize(cfg);
+   auto buffer  = new int[BUFFER_SIZE];
+   memcpy(buffer, pickled.second.data(), BUFFER_SIZE * sizeof(int));
+
+   MPI_Send(buffer, BUFFER_SIZE, MPI_INT, dest, NOTAG, MPI_COMM_WORLD);
+
+   delete[] buffer;
 }
 
 Node Manager::recv_node(int src) {
@@ -45,6 +52,8 @@ Node Manager::recv_node(int src) {
    MPI_Recv(buffer, BUFFER_SIZE, MPI_INT, src, NOTAG, MPI_COMM_WORLD, NULL);
 
    Node n = Node(buffer);
+
+   delete[] buffer;
 
    return n;
 }
@@ -107,20 +116,15 @@ void Manager::_reciever_loop() {
 }
 
 void Manager::_recv_msg() {
-   int flag;
+   Message msg;
    MPI_Status status;
-   MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
 
-   if (flag) {
-      Message msg;
-      int src = status.MPI_SOURCE;
-      MPI_Recv(&msg, 1, MSG_Dataype_, src, MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
+   MPI_Recv(&msg, 1, MSG_Dataype_, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+   int src = status.MPI_SOURCE;
+   msg.__from__ = src;
 
-      msg.__from__ = src;
-
-      std::lock_guard<std::mutex> guard(*_incoming_queue_mutex);
-      incoming.push(msg);
-   }
+   std::lock_guard<std::mutex> guard(*_incoming_queue_mutex);
+   incoming.push(msg);
 }
 
 // --- utils ---
@@ -137,8 +141,8 @@ MPI_Datatype get_mpi_message_dtype(Config &cfg) {
    const int k = 6;
 
    int          sizes[k]   = {1, 1, 1, 1, 1, 8};
-   MPI_Datatype types[k]   = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT};
-   MPI_Aint     offsets[k] = {offsetof(Message, number), offsetof(Message, timestamp),
+   MPI_Datatype types[k]   = {MPI_UINT64_T, MPI_INT,  MPI_INT,  MPI_INT, MPI_INT, MPI_INT};
+   MPI_Aint     offsets[k] = {offsetof(Message, timestamp), offsetof(Message, number),
                               offsetof(Message, sender), offsetof(Message, destination),
                               offsetof(Message, word),   offsetof(Message, payload)};
 
@@ -149,3 +153,4 @@ MPI_Datatype get_mpi_message_dtype(Config &cfg) {
    return dtype;
 }
 
+#pragma clang diagnostic pop
