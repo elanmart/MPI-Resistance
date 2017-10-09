@@ -72,7 +72,7 @@ bool Node::get(Message *msg) {
     return msg_available;
 }
 
-void Node::send_new_message(int destination, Words w, vector<int> &payload = DEFAULT_PAYLOAD) {
+void Node::send_new_message(int destination, Words w, vector<int> &payload) {
     msg_number_ += 1;
 
     auto msg = create_message(msg_number_, ID_, destination, T_, w, payload);
@@ -81,7 +81,7 @@ void Node::send_new_message(int destination, Words w, vector<int> &payload = DEF
     broadcast(msg);
 }
 
-void Node::send_new_acceptor_message(int destination, Words w, vector<int> &payload = DEFAULT_PAYLOAD) {
+void Node::send_new_acceptor_message(int destination, Words w, vector<int> &payload) {
     if (acceptor_state == AcceporState::Active or acceptor_state == AcceporState::TakingOver) {
         send_new_message(destination, w, payload);
 
