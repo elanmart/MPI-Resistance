@@ -87,6 +87,14 @@ public:
 
     int get_answer(int acceptor_id, int process_id);
 
+    void replace_id(int);
+
 };
+
+
+#define DASH "=====================================\n"
+#define QUEUE_LOG(msg, ...) printf(DASH                 \
+                             "msg  :: " msg "\n",  \
+                             ##__VA_ARGS__)
 
 #endif //PR_ACCEPTORQUEUE_H

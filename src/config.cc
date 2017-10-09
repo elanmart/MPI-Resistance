@@ -2,13 +2,13 @@
 
 
 Config::Config() {
-   max_children   = 3;
-   max_neighbours = 3;
+   max_children   = 2;
+   max_neighbours = 2;
    avg_neighbours = 2;
-   n_acceptors    = 1;
-   n_resources    = 1;
-   max_processes  = 10;
-   tree_size      = -1;
+   n_acceptors    = 2;
+   n_resources    = 10000;
+   max_processes  = 5;
+   tree_size      = 64;
 }
 
 void Config::parse_args(int argc, char** argv) {

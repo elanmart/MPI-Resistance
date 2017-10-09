@@ -1,10 +1,11 @@
 #include "node.h"
 #include "utils.h"
 
-#define MEETING_FREQ 128
-#define PASS_FREQ    128
-#define RETRY_AWAIT  128
-#define TIME_PENALTY 128
+#define MEETING_FREQ 1500
+#define PASS_FREQ    1500
+#define RETRY_AWAIT  10000
+#define MIN_PARTICIP 0
+#define TIME_PENALTY 0
 
 
 // ctors
@@ -13,11 +14,14 @@ Node::Node() {
     level_ = 0;
     parent_ = -1;
     msg_number_ = 0;
-    acceptor_id_ = 0;
+    last_retry_ = 0;
+    acceptor_id_ = -1;
+    time_penalty_ = 0;
     resource_count_ = 0;
     operation_number_ = 0;
     unanswered_requests_ = map<int64_t, vector<Message>>();
     awaiting_confirmations_ = 0;
+    acceptor_state = AcceporState::None;
     resource_state_ = ResourceState::IDLE;
     meeting_state_ = MeetingState::IDLE;
     STOP_ = false;
@@ -42,19 +46,30 @@ void Node::start_event_loop() {
     Message msg;
     manager_->start();
 
+    if (acceptor_id_ >= 0) {
+        NODE_LOG("Acceptor %d reporting for duty!", acceptor_id_);
+    }
+
+    assert(meeting_state_ == MeetingState::IDLE);
+
     while (not STOP_) {
 
         if (this->get(&msg))
             consume(msg);
 
-        if ((rand() % MEETING_FREQ == 0) and (meeting_state_ == MeetingState::IDLE))
+        if (meeting_state_ == MeetingState::IDLE and ID_ == 7)
             initialize_meeting_procedure();
-
-
-        if ((rand() % PASS_FREQ == 0) and (acceptor_state == AcceporState::Active))
+//
+        if (acceptor_id_ == 0)
             initialize_role_transfer();
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+//        if ((rand() % MEETING_FREQ == 0) and (meeting_state_ == MeetingState::IDLE))
+//            initialize_meeting_procedure();
+//
+//        if ((rand() % PASS_FREQ == 0) and (acceptor_state == AcceporState::Active))
+//            initialize_role_transfer();
+
+//        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
 
@@ -83,7 +98,9 @@ void Node::send_new_message(int destination, Words w, vector<int> &payload) {
 
 void Node::send_new_acceptor_message(int destination, Words w, vector<int> &payload) {
     if (acceptor_state == AcceporState::Active or acceptor_state == AcceporState::TakingOver) {
+        NODE_LOG("Answering to %d", destination);
         send_new_message(destination, w, payload);
+
 
     } else if (acceptor_state == AcceporState::Retired) {
         auto ID = split_64(trigger_);
@@ -91,7 +108,6 @@ void Node::send_new_acceptor_message(int destination, Words w, vector<int> &payl
         payload[7] = ID.second;
 
         send_new_message(sucessor_id_, Words::ACCEPTOR_PASS_TEST, payload);
-        perhaps_release();
 
     } else {
         auto answer = create_message(-1, -1, destination, T_, w, payload);
@@ -143,19 +159,19 @@ void Node::consume(Message &msg) {
 }
 
 void Node::handle(Message msg) {
-    NODE_LOG("handle triggered for: %s %d", EnumStrings[msg.word], msg.word);
+//    NODE_LOG("handle triggered for: %s %d", EnumStrings[msg.word], msg.word); //todo
 
     auto handler = comm_func_map_t[msg.word];
     return (this->*handler)(msg);
 }
 
 // Serialization
-pair<int, int *> Node::serialize(Config &cfg) {
+pair<int, vector<int>> Node::serialize(Config &cfg) {
     auto n_children = (int) children_.size();
     auto n_neighbours = (int) neighbours_.size();
 
-    int n_items = 9 + n_children + n_neighbours;
-    auto *buffer = new int[n_items];
+    int n_items = 9 + n_children + n_neighbours + 1024;
+    auto buffer = vector<int>(BUFFER_SIZE);
 
     buffer[0] = ID_;
     buffer[1] = level_;
@@ -199,15 +215,23 @@ void Node::deserialize(int *buffer) {
     for (int i = offset; i < offset + n_neighbours; i++)
         neighbours_.insert(buffer[i]);
 
+    if (acceptor_id_ >= 0)
+        acceptor_state = AcceporState::Active;
+    else
+        acceptor_state = AcceporState::None;
+
     acceptance_queue_ = AcceptorQueue(n_acceptors_, max_processes_);
 }
 
 // meetings
 void Node::initialize_meeting_procedure() {
-    NODE_LOG("Let's organize a meeting!");
+    assert(meeting_state_ == MeetingState::IDLE &&
+           "Can't initialize a meeting if I'm not IDLE.");
 
-    if (time_penalty_ >= T_)
+    if (time_penalty_ > T_)
         return;
+
+    NODE_LOG("Let's organize a meeting!");
 
     meeting_state_ = MeetingState::MASTER_ORG;
     ask_for_resource();
@@ -238,6 +262,8 @@ void Node::invite_participants() {
             break;
 
         this->invitees_.insert(id);
+        send_new_message(id, MEETING_INVITE);
+
         awaiting_response_ += 1;
     }
 
@@ -256,7 +282,7 @@ void Node::check_invite_responses() {
 
     NODE_LOG("All participants available");
 
-    bool enough_participants = (participants_.size() >= floor(this->invitees_.size() * percentage_threshold_));
+    bool enough_participants = (participants_.size() >= MIN_PARTICIP);
 
     if (enough_participants) {
         NODE_LOG("I have enough people, asking for meeting accept");
@@ -307,7 +333,7 @@ void Node::ask_for_resource() {
 void Node::ask_for_acceptance() {
     auto payload = create_payload(
             level_,
-            (int) participants_.size()
+            (int) participants_.size() + 1
     );
 
     send_new_message(ALL, Words::MEETING_ACCEPTANCE_REQUEST, payload);
@@ -347,13 +373,18 @@ void Node::perhaps_next_answer() {
 }
 
 void Node::perhaps_meeting_answer(int process_id) {
-    auto retcode = acceptance_queue_.get_answer(ID_, process_id);
+    auto retcode = acceptance_queue_.get_answer(acceptor_id_, process_id);
 
     if (retcode == 1)
         send_new_acceptor_message(process_id, MEETING_ACCEPTANCE_GRANTED);
 
     if (retcode == -1)
         send_new_acceptor_message(process_id, MEETING_ACCEPTANCE_DENIED);
+
+    if (acceptor_id_ >= 0) {
+        NODE_LOG("Meeting answer from acceptor %d: retcode was %d, process ID was %d",
+                 acceptor_id_, retcode, process_id);
+    }
 }
 
 // message handlers
@@ -410,7 +441,7 @@ void Node::HandleMeetingInvitationDecline(Message msg) {
 }
 
 void Node::HandleMeetingInvitiation(Message msg) {
-    if (time_penalty_ >= T_) {
+    if (time_penalty_ > T_) {
         NODE_LOG("Have a time penalty, denying invitation...");
 
         send_new_message(msg.sender, Words::MEETING_DECLINE);
@@ -459,24 +490,25 @@ void Node::HandleMeetingDone(Message msg) {
             send_new_message(id, MEETING_END);
         }
 
+        resource_state_ = ResourceState::IDLE;
         meeting_state_ = MeetingState::IDLE;
         time_penalty_  = T_ + TIME_PENALTY;
 
         send_new_message(ALL, MEETING_ACCEPTANCE_FULFILLED);
+
     }
 }
 
 // ----- Resource handling -----
 void Node::HandleResourceRequest(Message msg) {
-    NODE_LOG("Handling resource request");
+//    NODE_LOG("Handling resource request"); //todo
 
     if ((resource_count_ > 0) and (resource_state_ == ResourceState::IDLE)) {
         NODE_LOG("Yes, I have an idle resource, responding...");
 
         resource_answer(msg.sender);
     } else {
-        NODE_LOG("Resource unavailable at the moment. I'll ping you when I get one. State: %d, Count: %d",
-                 resource_state_, resource_count_);
+//        NODE_LOG("Resource unavailable at the moment. I'll pinHandling resource reques //todo
 
         resource_answer_queue_.push(msg.sender);
     }
@@ -554,10 +586,16 @@ void Node::HandleMeetingAcceptanceRequest(Message msg) {
     int process_lvl = msg.payload[0];
     int n_requested = msg.payload[1];
 
-    NODE_LOG("handling acceptance request msg from %d ,process lvl: %d n_requested: %d, sending acceptance report",
-             msg.sender, process_lvl, n_requested);
+    if (acceptor_id_ >= 0) {
+
+        NODE_LOG("Acceptor %d handling acceptance request msg from %d, \n"
+                         "process lvl: %d   n_requested: %d   sending acceptance report to ALL",
+                 acceptor_id_, msg.sender, process_lvl, n_requested);
+
+    }
 
     acceptance_queue_.perhaps_insert_id(msg.timestamp, msg.sender, process_lvl, n_requested);
+    acceptance_queue_.add_response_entry(msg.sender, T_, acceptor_id_, level_); // "response" from self.
 
     auto payload = create_payload(
             (int) msg.timestamp,
@@ -583,15 +621,18 @@ void Node::HandleMeetingAcceptanceReport(Message msg) {
     int acceptor_level = msg.payload[4];
     int acceptor_id = msg.payload[5];
 
-    NODE_LOG("Aceptance Report received.\n"
-             "sender: %d, process_T: %d, process_id: %d process_lvl: %d n_requested: %d acceptor_level: %d",
-             msg.sender, process_T, process_id, process_lvl, n_requested, acceptor_level);
+    if (acceptor_id_ >= 0) {
+
+        NODE_LOG("Acceptor %d handling Acceptance Report from Acceptor %d\n"
+                 "msg.sender: %d, process_T: %d, process_id: %d process_lvl: %d n_requested: %d acceptor_level: %d",
+                 acceptor_id_, acceptor_id, msg.sender, process_T, process_id, process_lvl, n_requested, acceptor_level);
+
+    }
 
     acceptance_queue_.perhaps_insert_id((uint64_t) process_T, process_id, process_lvl, n_requested);
     acceptance_queue_.add_response_entry(process_id, msg.timestamp, acceptor_id, acceptor_level);
 
     perhaps_meeting_answer(process_id);
-
 }
 
 void Node::HandleMeetingAcceptanceDenied(__unused Message msg) {
@@ -609,7 +650,11 @@ void Node::HandleMeetingAcceptanceFullfilled(Message msg) {
 // ACCEPTOR-PASSING ----------------------------------------------------------------------------------------------------
 
 void Node::initialize_role_transfer() {
-    if (acceptor_state == AcceporState::Active and (T_ - last_retry_) < RETRY_AWAIT) {
+    bool time_condition = ((T_ - last_retry_) > RETRY_AWAIT) or (last_retry_ == 0);
+
+    if (acceptor_state == AcceporState::Active and time_condition) {
+        last_retry_ = T_;
+
         NODE_LOG("Initialize role transfer!");
 
         last_retry_ = T_;
@@ -643,7 +688,7 @@ void Node::initialize_role_transfer() {
 void Node::set_trigger(Message &msg) {
     trigger_ = identifier(msg);
 
-    NODE_LOG("Now I'm tracking a message from %l", trigger_);
+//    NODE_LOG("Now I'm tracking a message from %l", trigger_);
 }
 
 void Node::pass(int sender_id, uint64_t timestamp) {
@@ -688,10 +733,10 @@ void Node::perhaps_release() {
 }
 
 void Node::HandleAcceptorPassOffer(Message msg) {
-    NODE_LOG("I was offered an acceptor role by: %d", msg.sender);
+//    NODE_LOG("I was offered an acceptor role by: %d", msg.sender);
 
     if (acceptor_state != AcceporState::None) {
-        NODE_LOG("But my acceptor state is not None, decline");
+//        NODE_LOG("But my acceptor state is not None, decline");
 
         send_new_message(msg.sender, Words::ACCEPTOR_PASS_DENY);
         return;
@@ -702,14 +747,14 @@ void Node::HandleAcceptorPassOffer(Message msg) {
     auto ban_neigh = (bool) msg.payload[2];
 
     if ((min_level <= level_) or (level_ > max_level)) {
-        NODE_LOG("But my level is not correct, decline");
+//        NODE_LOG("But my level is not correct, decline");
 
         send_new_message(msg.sender, Words::ACCEPTOR_PASS_DENY);
         return;
     }
 
     if (ban_neigh and (neighbours_.find(msg.sender) != neighbours_.end())) {
-        NODE_LOG("But I'm a neighbour, decline");
+//        NODE_LOG("But I'm a neighbour, decline");
 
         send_new_message(msg.sender, Words::ACCEPTOR_PASS_DENY);
         return;
@@ -738,6 +783,7 @@ void Node::HandleAcceptorPassConfirm(Message msg) {
 
     NODE_LOG("I got the acceptor role. My new ack id: %d", accepor_id);
 
+    acceptance_queue_.replace_id(accepor_id);
     acceptor_id_ = accepor_id;
     acceptor_state = AcceporState::TakingOver;
 }
@@ -749,7 +795,7 @@ void Node::HandleAcceptorPassRelease(__unused Message msg) {
 }
 
 void Node::HandleAcceptorPassCancel(__unused Message msg) {
-    NODE_LOG("I'm no longer in any acceptor state");
+//    NODE_LOG("I'm no longer in any acceptor state");
 
     assert(acceptor_state == AcceporState::Waiting &&
            "We've recieved a cancelling response, but we're not in Waiting state!");
@@ -758,12 +804,12 @@ void Node::HandleAcceptorPassCancel(__unused Message msg) {
 }
 
 void Node::HandleAcceptorPassTest(Message msg) {
-    int64_t ID = merge_64(msg.payload[6], msg.payload[7]);
+    int64_t msg_identifier = merge_64(msg.payload[6], msg.payload[7]);
 
-    NODE_LOG("I was asked to test a trigger: %lu", ID);
+    NODE_LOG("I was asked to test a trigger: %lu", msg_identifier);
 
-    if (unanswered_requests_.find(ID) != unanswered_requests_.end()) {
-        for (auto &answer : unanswered_requests_[ID]) {
+    if (unanswered_requests_.find(msg_identifier) != unanswered_requests_.end()) { // todo change this to a call to handle
+        for (auto &answer : unanswered_requests_[msg_identifier]) {
             NODE_LOG("Sending a message that was not answered to %d", answer.destination);
 
             answer = set_acceptor_id(answer);
@@ -775,7 +821,7 @@ void Node::HandleAcceptorPassTest(Message msg) {
 }
 
 void Node::HandleAcceptorPassDeny(__unused Message msg) {
-    NODE_LOG("I've received an acceptor pass denial");
+
 }
 
 // done        add logs

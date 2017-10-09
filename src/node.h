@@ -111,7 +111,7 @@ public:
     void handle(Message msg);
 
     // Serialization
-    pair<int, int *> serialize(Config& cfg);
+    pair<int, vector<int>> serialize(Config& cfg);
     void deserialize(int *buffer);
 
     // meetings

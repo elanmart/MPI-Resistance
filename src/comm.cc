@@ -38,8 +38,13 @@ void Manager::start() {
 // --- setup ---
 
 void Manager::send_node(Node &n, int dest, Config& cfg) {
-   auto msg = n.serialize(cfg);
-   MPI_Send(msg.second, msg.first, MPI_INT, dest, NOTAG, MPI_COMM_WORLD);
+   auto pickled = n.serialize(cfg);
+   auto buffer  = new int[BUFFER_SIZE];
+   memcpy(buffer, pickled.second.data(), BUFFER_SIZE * sizeof(int));
+
+   MPI_Send(buffer, BUFFER_SIZE, MPI_INT, dest, NOTAG, MPI_COMM_WORLD);
+
+   delete[] buffer;
 }
 
 Node Manager::recv_node(int src) {
@@ -47,6 +52,8 @@ Node Manager::recv_node(int src) {
    MPI_Recv(buffer, BUFFER_SIZE, MPI_INT, src, NOTAG, MPI_COMM_WORLD, NULL);
 
    Node n = Node(buffer);
+
+   delete[] buffer;
 
    return n;
 }
