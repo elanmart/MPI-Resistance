@@ -1,29 +1,29 @@
 # Introduction
-    This repo contains source code for a final project in Paralell Programming course. 
-    
-    It uses OpenMPI to implement a simulated "Resistance Movement", where processes communicate inside a specific structure 
-    to organize meetings and exchange resources and roles.
-    
-    The full problem description is available in `problem.txt` (in polish).
-    
-    To summarize, the task was to create a simple simulation of a "Resistance Movement". 
-    
-    We assume that some number of processes are arranged in a tree-like structure, where each node
-    has a parent, some number of children, and some number of neighbours on the same level. 
-    
-    From time to time the process may want to organise a meeting. To do that it has to accomplish three things:
-    
-    * gather some number of participants among it's adjacent nodes
-    
-    * collect a piece of "Resource": a DVD or a magazine
-    
-    * get acceptation from an "Acceptor" higher in the hierarchy. There is a limited number of Acceptors. 
-    
-    Acceptors may randomly decide to pass their role to parent, children, 
-    or someone on the same tree level, but who's not a neighbour.
-    
-    There is an upper bound on the number of processes that may participates 
-    in meetings at any given time (in the whole structure, not a in a single meeting!).
+This repo contains source code for a final project in Paralell Programming course. 
+
+It uses OpenMPI to implement a simulated "Resistance Movement", where processes communicate inside a specific structure 
+to organize meetings and exchange resources and roles.
+
+The full problem description is available in `problem.txt` (in polish).
+
+To summarize, the task was to create a simple simulation of a "Resistance Movement". 
+
+We assume that some number of processes are arranged in a tree-like structure, where each node
+has a parent, some number of children, and some number of neighbours on the same level. 
+
+From time to time the process may want to organise a meeting. To do that it has to accomplish three things:
+
+* gather some number of participants among it's adjacent nodes
+
+* collect a piece of "Resource": a DVD or a magazine
+
+* get acceptation from an "Acceptor" higher in the hierarchy. There is a limited number of Acceptors. 
+
+Acceptors may randomly decide to pass their role to parent, children, 
+or someone on the same tree level, but who's not a neighbour.
+
+There is an upper bound on the number of processes that may participates 
+in meetings at any given time (in the whole structure, not a in a single meeting!).
 
 # Installation
 
