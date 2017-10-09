@@ -22,11 +22,12 @@ inline int randint(int low, int high) {
 }
 
 inline vector<int> create_payload(int _0 = 0, int _1 = 0, int _2 = 0, int _3 = 0,
-                           int _4 = 0, int _5 = 0) {
+                                  int _4 = 0, int _5 = 0) {
     // 6 and 7 are not for public use.
+    int _6 {0}, _7 {0};
 
     auto payload = vector<int> {
-            _0, _1, _2, _3, _4, _5, 0, 0
+            _0, _1, _2, _3, _4, _5, _6, _7
     };
 
     return payload;

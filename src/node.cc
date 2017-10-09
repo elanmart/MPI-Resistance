@@ -2,16 +2,20 @@
 #include "utils.h"
 
 #define MEETING_FREQ 128
+#define PASS_FREQ    128
+#define RETRY_AWAIT  128
+#define TIME_PENALTY 128
+
 
 //TODO
 void Node::debug() {
     NODE_LOG("TODO: FOR DEBUGGING PURPOSES WE'RE MESSING UP THE ACCEPTOR / RESOURCE STUFF");
     if (ID_ == 0) {
         resource_count_ = 1;
-        is_acceptor_ = 1;
+        acceptor_id_ = 1;
     } else {
         resource_count_ = 0;
-        is_acceptor_ = 0;
+        acceptor_id_ = 0;
     }
 }
 
@@ -21,10 +25,9 @@ Node::Node() {
     level_ = 0;
     parent_ = -1;
     msg_number_ = 0;
-    is_acceptor_ = 0;
+    acceptor_id_ = 0;
     resource_count_ = 0;
     operation_number_ = 0;
-    acceptance_queue_ = AcceptorQueue(3, 3);
     unanswered_requests_ = map<int64_t, vector<Message>>();
     awaiting_confirmations_ = 0;
     resource_state_ = ResourceState::IDLE;
@@ -57,8 +60,13 @@ void Node::start_event_loop() {
 
         if (this->get(&msg))
             consume(msg);
-        else if ((rand() % MEETING_FREQ == 0) and (meeting_state_ == MeetingState::IDLE))
+
+        if ((rand() % MEETING_FREQ == 0) and (meeting_state_ == MeetingState::IDLE))
             initialize_meeting_procedure();
+
+
+        if ((rand() % PASS_FREQ == 0) and (acceptor_state == AcceporState::Active))
+            initialize_role_transfer();
 
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
@@ -68,13 +76,17 @@ void Node::start_event_loop() {
 bool Node::get(Message *msg) {
     auto msg_available = manager_->get(msg);
 
-    if (msg_available)
+    if (msg_available) {
         T_ = max(msg->timestamp, T_);
+        timestamps_log_[msg->sender] = msg->timestamp;
+
+        perhaps_release();
+    }
 
     return msg_available;
 }
 
-void Node::send_new_message(int destination, Words w, int *payload) {
+void Node::send_new_message(int destination, Words w, vector<int> &payload = DEFAULT_PAYLOAD) {
     msg_number_ += 1;
 
     auto msg = create_message(msg_number_, ID_, destination, T_, w, payload);
@@ -83,7 +95,7 @@ void Node::send_new_message(int destination, Words w, int *payload) {
     broadcast(msg);
 }
 
-void Node::send_new_acceptor_message(int destination, Words w, int *payload) {
+void Node::send_new_acceptor_message(int destination, Words w, vector<int> &payload = DEFAULT_PAYLOAD) {
     if (acceptor_state == AcceporState::Active or acceptor_state == AcceporState::TakingOver) {
         send_new_message(destination, w, payload);
 
@@ -152,21 +164,23 @@ void Node::handle(Message msg) {
 }
 
 // Serialization
-pair<int, int *> Node::serialize() {
+pair<int, int *> Node::serialize(Config &cfg) {
     auto n_children = (int) children_.size();
     auto n_neighbours = (int) neighbours_.size();
 
-    int n_items = 5 + 2 + n_children + n_neighbours;
+    int n_items = 9 + n_children + n_neighbours;
     auto *buffer = new int[n_items];
 
     buffer[0] = ID_;
     buffer[1] = level_;
     buffer[2] = parent_;
     buffer[3] = resource_count_;
-    buffer[4] = is_acceptor_;
-    buffer[5] = n_children;
-    buffer[6] = n_neighbours;
-    int offset = 7;
+    buffer[4] = acceptor_id_;
+    buffer[5] = cfg.n_acceptors;
+    buffer[6] = cfg.max_processes;
+    buffer[7] = n_children;
+    buffer[8] = n_neighbours;
+    int offset = 9;
 
     for (auto item : children_)
         buffer[offset++] = item;
@@ -178,14 +192,16 @@ pair<int, int *> Node::serialize() {
 }
 
 void Node::deserialize(int *buffer) {
-    ID_ = buffer[0];
-    level_ = buffer[1];
-    parent_ = buffer[2];
-    resource_count_ = buffer[3];
-    is_acceptor_ = buffer[4];
-    int n_children = buffer[5];
-    int n_neighbours = buffer[6];
-    int offset = 7;
+    ID_               = buffer[0];
+    level_            = buffer[1];
+    parent_           = buffer[2];
+    resource_count_   = buffer[3];
+    acceptor_id_      = buffer[4];
+    n_acceptors_      = buffer[5];
+    max_processes_    = buffer[6];
+    int n_children    = buffer[7];
+    int n_neighbours  = buffer[8];
+    int offset = 9;
 
     children_.clear();
     neighbours_.clear();
@@ -196,11 +212,16 @@ void Node::deserialize(int *buffer) {
     offset += n_children;
     for (int i = offset; i < offset + n_neighbours; i++)
         neighbours_.insert(buffer[i]);
+
+    acceptance_queue_ = AcceptorQueue(n_acceptors_, max_processes_);
 }
 
 // meetings
 void Node::initialize_meeting_procedure() {
     NODE_LOG("Let's organize a meeting!");
+
+    if (time_penalty_ >= T_)
+        return;
 
     meeting_state_ = MeetingState::MASTER_ORG;
     ask_for_resource();
@@ -215,17 +236,23 @@ void Node::invite_participants() {
     assert(this->meeting_state_ == MeetingState::MASTER_ORG &&
            "I've tried to invite participants but I'm not a MASTER_ORG!");
 
+    set<int> invitees;
     this->invitees_.clear();
-    this->invitees_.insert(children_.begin(), children_.end());
-    this->invitees_.insert(neighbours_.begin(), neighbours_.end());
+
+    invitees.insert(children_.begin(), children_.end());
+    invitees.insert(neighbours_.begin(), neighbours_.end());
     if (parent_ != -1) {
-        this->invitees_.insert(parent_);
+        invitees.insert(parent_);
     }
 
-    awaiting_response_ = (int) (this->invitees_.size());
+    awaiting_response_ = 0;
+    for (auto id : invitees) {
 
-    for (auto id : this->invitees_) {
-        send_new_message(id, MEETING_INVITE);
+        if (awaiting_response_ >= (max_processes_ - 1))
+            break;
+
+        this->invitees_.insert(id);
+        awaiting_response_ += 1;
     }
 
     NODE_LOG("I've sent invites to %d processes", awaiting_response_);
@@ -295,7 +322,7 @@ void Node::ask_for_acceptance() {
     auto payload = create_payload(
             level_,
             (int) participants_.size()
-    ).data();
+    );
 
     send_new_message(ALL, Words::MEETING_ACCEPTANCE_REQUEST, payload);
 }
@@ -432,6 +459,7 @@ void Node::HandleMeetingEnd(__unsued Message msg) {
     NODE_LOG("Handling meeting end");
 
     meeting_state_ = MeetingState::IDLE;
+    time_penalty_  = T_ + TIME_PENALTY;
 }
 
 void Node::HandleMeetingDone(Message msg) {
@@ -446,6 +474,7 @@ void Node::HandleMeetingDone(Message msg) {
         }
 
         meeting_state_ = MeetingState::IDLE;
+        time_penalty_  = T_ + TIME_PENALTY;
 
         send_new_message(ALL, MEETING_ACCEPTANCE_FULFILLED);
     }
@@ -549,8 +578,9 @@ void Node::HandleMeetingAcceptanceRequest(Message msg) {
             msg.sender,
             process_lvl,
             n_requested,
-            level_
-    ).data();
+            level_,
+            acceptor_id_
+    );
 
     send_new_acceptor_message(ALL, MEETING_ACCEPTANCE_REPORT, payload);
 
@@ -571,8 +601,8 @@ void Node::HandleMeetingAcceptanceReport(Message msg) {
              "sender: %d, process_T: %d, process_id: %d process_lvl: %d n_requested: %d acceptor_level: %d",
              msg.sender, process_T, process_id, process_lvl, n_requested, acceptor_level);
 
-    acceptance_queue_.add_response_entry((uint64_t) process_T, process_id, process_lvl, n_requested,
-                                         msg.timestamp, acceptor_id, acceptor_level);
+    acceptance_queue_.perhaps_insert_id((uint64_t) process_T, process_id, process_lvl, n_requested);
+    acceptance_queue_.add_response_entry(process_id, msg.timestamp, acceptor_id, acceptor_level);
 
     perhaps_meeting_answer(process_id);
 
@@ -593,8 +623,10 @@ void Node::HandleMeetingAcceptanceFullfilled(Message msg) {
 // ACCEPTOR-PASSING ----------------------------------------------------------------------------------------------------
 
 void Node::initialize_role_transfer() {
-    if (acceptor_state == AcceporState::Active and (last_retry_ - now_) < retry_await_) {
+    if (acceptor_state == AcceporState::Active and (T_ - last_retry_) < RETRY_AWAIT) {
         NODE_LOG("Initialize role transfer!");
+
+        last_retry_ = T_;
 
         float p = rand_f();
 
@@ -616,7 +648,7 @@ void Node::initialize_role_transfer() {
                 min_level,
                 max_level,
                 ban_neigh
-        ).data();
+        );
 
         send_new_message(ALL, Words::ACCEPTOR_PASS_OFFER, payload);
     }
@@ -628,22 +660,27 @@ void Node::set_trigger(Message &msg) {
     NODE_LOG("Now I'm tracking a message from %l", trigger_);
 }
 
-void Node::pass(int sender_id) {
+void Node::pass(int sender_id, uint64_t timestamp) {
     NODE_LOG("Passing to %d!", sender_id);
 
     auto payload = create_payload(
-            is_acceptor_
+            acceptor_id_
     );
 
-    is_acceptor_ = -1;
-    sucessor_id_ = sender_id;
-    acceptor_state = AcceporState::Retired;
+    acceptor_id_    = -1;
+    sucessor_id_    = sender_id;
+    timestamp_limit = timestamp;
+    acceptor_state  = AcceporState::Retired;
 
-    send_new_message(sender_id, Words::ACCEPTOR_PASS_CONFIRM, payload.data());
+    send_new_message(sender_id, Words::ACCEPTOR_PASS_CONFIRM, payload);
 }
 
 Message Node::set_acceptor_id(Message msg) {
+    if (msg.word == Words::MEETING_ACCEPTANCE_REPORT) {
+        msg.payload[5] = acceptor_id_;
+    }
 
+    return msg;
 }
 
 void Node::perhaps_release() {
@@ -651,8 +688,11 @@ void Node::perhaps_release() {
         return;
 
     for (auto &item : timestamps_log_) {
-        if (item.second < timestamp_limit)
+        if (item.second < timestamp_limit) {
+            NODE_LOG("Not releasing the successor. Waiting for: %d (T: %lu)", item.first, item.second);
+
             return;
+        }
     }
 
     NODE_LOG("I'm going to release the sucessor: %d", sucessor_id_);
@@ -699,7 +739,7 @@ void Node::HandleAcceptorPassAck(Message msg) {
     if (acceptor_state == AcceporState::Active) {
         NODE_LOG("I'm going to pass the acceptor");
 
-        pass(msg.sender);
+        pass(msg.sender, msg.timestamp);
     } else {
         NODE_LOG("I'm going to deny the acceptor ACK signal");
 
@@ -712,7 +752,7 @@ void Node::HandleAcceptorPassConfirm(Message msg) {
 
     NODE_LOG("I got the acceptor role. My new ack id: %d", accepor_id);
 
-    is_acceptor_ = accepor_id;
+    acceptor_id_ = accepor_id;
     acceptor_state = AcceporState::TakingOver;
 }
 
@@ -738,8 +778,12 @@ void Node::HandleAcceptorPassTest(Message msg) {
 
     if (unanswered_requests_.find(ID) != unanswered_requests_.end()) {
         for (auto &answer : unanswered_requests_[ID]) {
-            send_new_message(answer.destination, answer.word, answer.payload);
             NODE_LOG("Sending a message that was not answered to %d", answer.destination);
+
+            answer = set_acceptor_id(answer);
+
+            auto vec_payload = vector<int>(begin(answer.payload), end(answer.payload));
+            send_new_message(answer.destination, answer.word, vec_payload);
         }
     }
 }
@@ -748,24 +792,25 @@ void Node::HandleAcceptorPassDeny(__unsued Message msg) {
     NODE_LOG("I've received an acceptor pass denial");
 }
 
-//done add logs
-//done make sure sucessor_id_ is set
-//todo properly handle acceptor ID filling in HandleMeetingAcceptanceReport and HandleMeetingAcceptanceRequest
-//todo change is_acceptor_ to an ID, pass it from the tree root.
-//todo pass the size of the tree
-//todo update the map of timestamps
-//todo verify that release makes sense
-//todo verify that ack queues make sense
-//todo pass all payloads as vectors
-//todo move acceptor queue params to `deserialize()` and read parameters from config.
-//todo are we even sending the release signal??????
-//todo make sure you never pass 64 bit ID_ in a single, 32-bit payload entry
-//todo add dynamic timestamp filling
-//todo add "last_retry_ now_ retry_await_" functionality
-//todo add missing entries in mapping
-//todo handle ack pass deny
-//todo note that we're not losing generality
-//todo napisać sparwko
-//todo add perhaps_release to event loop
-//todo add aceptor_pass to event loop
-//todo add proper time penalty
+// done        add logs
+// done        make sure sucessor_id_ is set
+// done        properly handle acceptor ID filling in HandleMeetingAcceptanceReport and HandleMeetingAcceptanceRequest
+// done        change acceptor_id_ to an ID, pass it from the tree root.
+// canceled    pass the size of the tree
+// done        update the map of timestamps
+// done        verify that release makes sense
+// done        verify that ack queues make sense
+// done        pass all payloads as vectors
+// done        move acceptor queue params to `deserialize()` and read parameters from config.
+// done        are we even sending the release signal??????
+// done        make sure you never pass 64 bit ID_ in a single, 32-bit payload entry
+// done        add dynamic timestamp filling
+// done        add "last_retry_ now_ retry_await_" functionality
+// done        add missing entries in mapping
+// done        handle ack pass deny
+// done        make sure we never request more than max number of processes to meet
+// done        add perhaps_release to event loop
+// done        add aceptor_pass to event loop
+// done        add proper time penalty
+// todo        napisać sparwko
+// cancelled   note that we're not losing generality

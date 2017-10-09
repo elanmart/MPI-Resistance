@@ -45,7 +45,7 @@ public:
     // Identity
     int32_t ID_;                                                      // ID
     int32_t level_;                                                   // Depth in tree
-    int32_t is_acceptor_;
+    int32_t acceptor_id_;
 
     // Configuration variables
     int resource_count_;
@@ -86,10 +86,10 @@ public:
     map<int, uint64_t> timestamps_log_;
     uint64_t timestamp_limit;
     int64_t trigger_;
+    int n_acceptors_;
+    int max_processes_;
     int sucessor_id_;
-    int retry_await_;
-    int last_retry_;
-    int now_;
+    uint64_t last_retry_;
     void initialize_role_transfer();
     void set_trigger(Message& msg);
 
@@ -101,8 +101,8 @@ public:
 
     // message passing
     bool get(Message *msg);
-    void send_new_message(int destination, Words w, int *payload = nullptr);
-    void send_new_acceptor_message(int destination, Words w, int *payload = nullptr);
+    void send_new_message(int destination, Words w, vector<int> &payload = DEFAULT_PAYLOAD);
+    void send_new_acceptor_message(int destination, Words w, vector<int> &payload = DEFAULT_PAYLOAD);
     void broadcast(Message msg);
     void send_to(Message msg, set<int> recipients);                      // Sends message to a set of receipents
     void send_to(Message msg, int dest);                                 // Sends message to destination
@@ -113,7 +113,7 @@ public:
     void handle(Message msg);
 
     // Serialization
-    pair<int, int *> serialize();
+    pair<int, int *> serialize(Config& cfg);
     void deserialize(int *buffer);
 
     // meetings
@@ -187,9 +187,11 @@ public:
 
     void HandleAcceptorPassRelease(Message msg);
 
-    void pass(int sender_id);
+    void pass(int sender_id, uint64_t timestamp);
 
     void perhaps_release();
+
+    Message set_acceptor_id(Message msg);
 };
 
 // Logging Helpers

@@ -19,6 +19,7 @@ public:
    int n_resources;      // ile risorsów w całym drzewie
 
    int n_acceptors;      // ile akceptorów w drzewie
+   int max_processes;
 
    void parse_args(int argc, char** argv); // ciekawe co to robi
    void help();

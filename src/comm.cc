@@ -35,8 +35,8 @@ void Manager::start() {
 
 // --- setup ---
 
-void Manager::send_node(Node &n, int dest) {
-   auto msg = n.serialize();
+void Manager::send_node(Node &n, int dest, Config& cfg) {
+   auto msg = n.serialize(cfg);
    MPI_Send(msg.second, msg.first, MPI_INT, dest, NOTAG, MPI_COMM_WORLD);
 }
 

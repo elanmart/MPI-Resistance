@@ -49,7 +49,7 @@ public:
     /*
      * Służy do tworzenia drzewa. Nieistotne.
      */
-   void send_node(Node& n, int dest);
+   void send_node(Node& n, int dest, Config &cfg);
     /*
      * Służy do tworzenia drzewa. Nieistotne
      */

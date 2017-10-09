@@ -7,6 +7,7 @@ Config::Config() {
    avg_neighbours = 2;
    n_acceptors    = 1;
    n_resources    = 1;
+   max_processes  = 10;
    tree_size      = -1;
 }
 
@@ -42,6 +43,9 @@ void Config::parse_args(int argc, char** argv) {
       else if (arg_match(idx, "--n-acceptors")) {
          n_acceptors = atoi(argv[idx + 1]);
       }
+      else if (arg_match(idx, "--max-processes")) {
+         max_processes = atoi(argv[idx + 1]);
+      }
    }
 }
 
@@ -52,6 +56,7 @@ void Config::help() {
            << "  --avg-neighbours   average number of neihbours per node  [" << avg_neighbours << "]\n"
            << "  --n-acceptors      number of processes being acceptor    [" << n_acceptors    << "]\n"
            << "  --n-resources      number of resources in the tree       [" << n_resources    << "]\n"
+           << "  --max-processes    meeting processes limit               [" << max_processes  << "]\n"
            << endl;
 }
 

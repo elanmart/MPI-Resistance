@@ -57,9 +57,18 @@ vector<Node> create_tree(Config &cfg) {
    }
 
    // acceptor token
-   nodes[0].is_acceptor_ = 1;
+   assert(cfg.n_acceptors < nodes.size() &&
+          "Number of acceptors greater or equal to the tree size!");
+
+   set<int> acceptors;
    for (int i = 0; i < cfg.n_acceptors; ++i) {
-      nodes[randint(0, (int) nodes.size())].is_acceptor_ = 1;
+      auto node_id = randint(0, (int) nodes.size());
+
+      if (acceptors.find(node_id) != acceptors.end())
+         continue;
+
+      nodes[node_id].acceptor_id_ = (int) acceptors.size();
+      acceptors.insert(node_id);
    }
 
    return nodes;
@@ -78,7 +87,7 @@ int main (int argc, char* argv[])
       local     = tree[0];
 
       for (int i = 1; i < manager.size_; ++i) {
-         manager.send_node(tree[i], i);
+         manager.send_node(tree[i], i, cfg);
       }
 
    } else {

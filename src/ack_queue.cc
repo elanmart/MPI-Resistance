@@ -1,7 +1,3 @@
-//
-// Created by elan on 19.09.17.
-//
-
 #include "ack_queue.h"
 #include "utils.h"
 
@@ -10,7 +6,7 @@ void AcceptorQueue::perhaps_insert_id(uint64_t T_request_sent, int process_id, i
     if (contains(seen_ids_, process_id))
         return;
 
-    auto entry        = MainQueueEntry(T_request_sent, process_id, process_level, n_requested);
+    MainQueueEntry entry(T_request_sent, process_id, process_level, n_requested);
 
     seen_ids_.insert(process_id);
     response_counter_[process_id] = 0;
@@ -19,10 +15,7 @@ void AcceptorQueue::perhaps_insert_id(uint64_t T_request_sent, int process_id, i
     sort(storage_.begin(), storage_.end());
 }
 
-void AcceptorQueue::add_response_entry(uint64_t T_request_sent, int process_id, int process_level, int n_requested,
-                                       uint64_t T_request_recieved, int acceptor_id, int acceptor_level) {
-
-    perhaps_insert_id(T_request_sent, process_id, process_level, n_requested);
+void AcceptorQueue::add_response_entry(int process_id, uint64_t T_request_recieved, int acceptor_id, int acceptor_level) {
 
     for (auto& item : storage_) {
         if (item.process_id_ == process_id) {
@@ -113,4 +106,18 @@ int AcceptorQueue::get_answer(int acceptor_id, int process_id) {
     // everything is ready but there are acceptors that recieved the request before us
     // and are also higher in the tree than the process
     return 0;
+}
+
+void AcceptorQueue::remove_entry(int process_id) {
+    for (uint32_t i = 0; i<storage_.size(); i++) {
+
+        auto& item = storage_.at(i);
+
+        if (item.process_id_ == process_id) {
+            storage_.erase(storage_.begin() + i);
+            seen_ids_.erase(seen_ids_.find(process_id));
+
+            return;
+        }
+    }
 }
