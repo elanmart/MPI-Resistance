@@ -4,7 +4,7 @@
 
 #include "common.h"
 
-#define __unsued __attribute__((unused))
+#define __unused __attribute__((unused))
 
 template <typename T>
 inline bool contains(set<T> collection, T item) {

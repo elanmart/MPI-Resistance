@@ -7,18 +7,6 @@
 #define TIME_PENALTY 128
 
 
-//TODO
-void Node::debug() {
-    NODE_LOG("TODO: FOR DEBUGGING PURPOSES WE'RE MESSING UP THE ACCEPTOR / RESOURCE STUFF");
-    if (ID_ == 0) {
-        resource_count_ = 1;
-        acceptor_id_ = 1;
-    } else {
-        resource_count_ = 0;
-        acceptor_id_ = 0;
-    }
-}
-
 // ctors
 Node::Node() {
     T_ = 0;
@@ -51,8 +39,6 @@ void Node::set_manager(Manager *m) {
 
 // main event loop
 void Node::start_event_loop() {
-    debug();
-
     Message msg;
     manager_->start();
 
@@ -404,7 +390,7 @@ void Node::initialize_mapping() {
 }
 
 // ----- Invitation Handlers -----
-void Node::HandleNoneMessage(__unsued Message msg) {
+void Node::HandleNoneMessage(__unused Message msg) {
     NODE_LOG("FATAL: UNHANDLED BEHAVIOR");
 }
 
@@ -443,7 +429,7 @@ void Node::HandleMeetingInvitiation(Message msg) {
     }
 }
 
-void Node::HandleMeetingCancel(__unsued Message msg) {
+void Node::HandleMeetingCancel(__unused Message msg) {
     meeting_state_ = MeetingState::IDLE;
     perhaps_next_answer();
 }
@@ -455,7 +441,7 @@ void Node::HandleMeetingStart(Message msg) {
     this_thread::sleep_for(chrono::seconds(10));
 }
 
-void Node::HandleMeetingEnd(__unsued Message msg) {
+void Node::HandleMeetingEnd(__unused Message msg) {
     NODE_LOG("Handling meeting end");
 
     meeting_state_ = MeetingState::IDLE;
@@ -526,7 +512,7 @@ void Node::HandleResourceAck(Message msg) {
     perhaps_next_answer();
 }
 
-void Node::HandleResourceDenial(__unsued Message msg) {
+void Node::HandleResourceDenial(__unused Message msg) {
     if (resource_state_ == ResourceState::NEEDED) {
         NODE_LOG("Someone didn't want my resource. I need a resource, so i'll consume it myself");
 
@@ -541,7 +527,7 @@ void Node::HandleResourceDenial(__unsued Message msg) {
     }
 }
 
-void Node::HandleResourceDelivery(__unsued Message msg) {
+void Node::HandleResourceDelivery(__unused Message msg) {
     NODE_LOG("I've got resource delivered");
 
     resource_count_ += 1;
@@ -550,7 +536,7 @@ void Node::HandleResourceDelivery(__unsued Message msg) {
 
 // ----- Meeting acceptance handler -----
 // node-side
-void Node::HandleMeetingAcceptanceGranted(__unsued Message msg) {
+void Node::HandleMeetingAcceptanceGranted(__unused Message msg) {
     NODE_LOG("Got Acceptance. Sending start token");
 
     awaiting_confirmations_ = (int) participants_.size();
@@ -608,7 +594,7 @@ void Node::HandleMeetingAcceptanceReport(Message msg) {
 
 }
 
-void Node::HandleMeetingAcceptanceDenied(__unsued Message msg) {
+void Node::HandleMeetingAcceptanceDenied(__unused Message msg) {
     NODE_LOG("I'm cancelling the meeting");
 
     meeting_cancel();
@@ -756,13 +742,13 @@ void Node::HandleAcceptorPassConfirm(Message msg) {
     acceptor_state = AcceporState::TakingOver;
 }
 
-void Node::HandleAcceptorPassRelease(__unsued Message msg) {
+void Node::HandleAcceptorPassRelease(__unused Message msg) {
     NODE_LOG("I'm now a standard acceptor");
 
     acceptor_state = AcceporState::Active;
 }
 
-void Node::HandleAcceptorPassCancel(__unsued Message msg) {
+void Node::HandleAcceptorPassCancel(__unused Message msg) {
     NODE_LOG("I'm no longer in any acceptor state");
 
     assert(acceptor_state == AcceporState::Waiting &&
@@ -788,7 +774,7 @@ void Node::HandleAcceptorPassTest(Message msg) {
     }
 }
 
-void Node::HandleAcceptorPassDeny(__unsued Message msg) {
+void Node::HandleAcceptorPassDeny(__unused Message msg) {
     NODE_LOG("I've received an acceptor pass denial");
 }
 

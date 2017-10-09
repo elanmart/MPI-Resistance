@@ -34,8 +34,6 @@ enum class AcceporState {
 
 class Node {
 public:
-    void debug();
-
     // ctors
     Node();
     explicit Node(int ID);

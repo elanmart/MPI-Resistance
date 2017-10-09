@@ -79,11 +79,11 @@ public:
 
     MainQueueEntry get(int process_id);
 
-    bool check_ready_and_limits(MainQueueEntry& item, int acceptor_id);
+    bool check_ready_and_limits(MainQueueEntry& item);
 
     bool check_is_first_higher(MainQueueEntry& item, int acceptor_id);
 
-    bool check_all_invalid(MainQueueEntry& item, int acceptor_id);
+    bool check_all_invalid(MainQueueEntry& item);
 
     int get_answer(int acceptor_id, int process_id);
 

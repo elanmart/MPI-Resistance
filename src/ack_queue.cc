@@ -41,7 +41,7 @@ MainQueueEntry AcceptorQueue::get(int process_id) {
     throw ("KeyError: " + to_string(process_id) + " was not found in queue");
 }
 
-bool AcceptorQueue::check_ready_and_limits(MainQueueEntry &item, int acceptor_id) {
+bool AcceptorQueue::check_ready_and_limits(MainQueueEntry &item) {
     int counter = 0;
 
     for (auto& other : storage_) {
@@ -69,7 +69,7 @@ bool AcceptorQueue::check_is_first_higher(MainQueueEntry &item, int acceptor_id)
     return false;
 }
 
-bool AcceptorQueue::check_all_invalid(MainQueueEntry &item, int acceptor_id) {
+bool AcceptorQueue::check_all_invalid(MainQueueEntry &item) {
     for (auto& report : item.reports_){
         if (report.acceptor_level_ > item.process_level_)
             return false;
@@ -92,11 +92,11 @@ int AcceptorQueue::get_answer(int acceptor_id, int process_id) {
     auto&& item = get(process_id);
 
     // all acceptors are lower than requesting process
-    if (check_all_invalid(item, acceptor_id))
+    if (check_all_invalid(item))
         return -1;
 
     // not all earlier requests are ready to be deployed or they exceed a total process limit
-    if (not check_ready_and_limits(item, acceptor_id))
+    if (not check_ready_and_limits(item))
         return 0;
 
     // acceptor is the first acceptor that is higher than the process.

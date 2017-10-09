@@ -1,7 +1,9 @@
 #include "comm.h"
 
-// --- ctors ---
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-variable"
 
+// --- ctors ---
 Manager::Manager(Config cfg) {
    mpi_init();
 
@@ -144,3 +146,4 @@ MPI_Datatype get_mpi_message_dtype(Config &cfg) {
    return dtype;
 }
 
+#pragma clang diagnostic pop
