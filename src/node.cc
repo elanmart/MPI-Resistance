@@ -57,19 +57,19 @@ void Node::start_event_loop() {
         if (this->get(&msg))
             consume(msg);
 
-        if (meeting_state_ == MeetingState::IDLE and ID_ == 7)
-            initialize_meeting_procedure();
-//
-        if (acceptor_id_ == 0)
-            initialize_role_transfer();
-
-//        if ((rand() % MEETING_FREQ == 0) and (meeting_state_ == MeetingState::IDLE))
+//        if (meeting_state_ == MeetingState::IDLE and ID_ == 7)
 //            initialize_meeting_procedure();
 //
-//        if ((rand() % PASS_FREQ == 0) and (acceptor_state == AcceporState::Active))
+//        if (acceptor_id_ == 0)
 //            initialize_role_transfer();
 
-//        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        if ((rand() % MEETING_FREQ == 0) and (meeting_state_ == MeetingState::IDLE))
+            initialize_meeting_procedure();
+
+        if ((rand() % PASS_FREQ == 0) and (acceptor_state == AcceporState::Active))
+            initialize_role_transfer();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
 
